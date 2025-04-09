@@ -55,12 +55,18 @@ class StructureSpacer:
 		separation_original: int = 0
 		spacing_new: int = 0
 		separation_new: int = 0
+		type: str = "minecraft:random_spread"
 
 		def __init__(self, setID: str, source_json: dict = None):
 			self.setID = setID
 			self.source_json = source_json
-			self.spacing_original = self.source_json["placement"]["spacing"]
-			self.separation_original = self.source_json["placement"]["separation"]
+
+			if self.source_json["placement"]["type"] == "minecraft:random_spread":
+				self.spacing_original = self.source_json["placement"]["spacing"]
+				self.separation_original = self.source_json["placement"]["separation"]
+			elif self.source_json["placement"]["type"] == "minecraft:concentric_rings":
+				self.spacing_original = self.source_json["placement"]["distance"]
+				self.type = "minecraft:concentric_rings"
 
 		def set_spacing(self, n: int):
 			self.spacing_new = n
