@@ -1,6 +1,10 @@
 import sys
-from modules import Dialogs, biomeblender, InfoWindow
 from PySide6 import QtCore, QtWidgets, QtGui
+from src.modules import Dialogs, biomeblender, InfoWindow
+from src.modules.DatapackManager import DatapackManager
+from src.modules.StructureSpacer import StructureSpacer
+from src.data import project
+from src.data import managers
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -23,13 +27,18 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.setCentralWidget(self.widget)
 		self.biome_manager = self.widget.biome_manager
 
+		self.resize(800, 600)
+
 
 	@QtCore.Slot()
 	def import_datapacks(self):
 		file = QtWidgets.QFileDialog.getOpenFileName(self, "Select datapack", "", "Datapack files (*.zip *.jar)")
 		location = file[0]
-		self.biome_manager.add_pack(location)
 
+		managers.datapacks.load_pack(location)
+
+		# Legacy BiomeBlender code (to be removed later)
+		self.biome_manager.add_pack(location)
 		self.widget.biome_list_widget.update_list()
 		self.widget.biome_list_scroll_area.update()
 		self.widget.datapack_list_widget.update_list()
@@ -60,13 +69,22 @@ class MainWidget(QtWidgets.QWidget):
 		self.datapack_list_widget = DatapackListWidget(self, self.biome_manager)
 		self.biome_list_widget = BiomeListWidget(self.biome_manager)
 
+		self.workspace = QtWidgets.QTabWidget()
+
+		self.structure_list_widget = QtWidgets.QWidget()
+
+
 		# Layout time!!!!!!!!!!
 		self.layout = QtWidgets.QHBoxLayout(self)
 		self.layout.addWidget(self.datapack_list_widget)
 		self.biome_list_scroll_area = QtWidgets.QScrollArea()
 		self.biome_list_scroll_area.setWidget(self.biome_list_widget)
 		self.biome_list_scroll_area.setWidgetResizable(True)
-		self.layout.addWidget(self.biome_list_scroll_area)
+		#self.layout.addWidget(self.biome_list_scroll_area)
+		self.workspace.addTab(self.biome_list_scroll_area, "Biome providers")
+		self.workspace.addTab(self.structure_list_widget, "Structures")
+
+		self.layout.addWidget(self.workspace)
 
 
 class DatapackListWidget(QtWidgets.QListWidget):
@@ -78,7 +96,9 @@ class DatapackListWidget(QtWidgets.QListWidget):
 		self.entries        = list()
 		self.layout         = QtWidgets.QVBoxLayout(self)
 
-		self.setFixedWidth(250)
+		self.layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+
+		self.setFixedWidth(300)
 
 		self.update_list()
 
@@ -92,51 +112,79 @@ class DatapackListWidget(QtWidgets.QListWidget):
 		self.entries.clear()
 
 		for pack in self.controller.packs:
-			entry = self.ItemWidget(self, pack["id"])
+			entry = self.DatapackItemWidget(self, pack["id"])
 			self.entries.append(entry)
 			self.layout.addWidget(entry)
 
 
-	class ItemWidget(QtWidgets.QFrame):
+	class DatapackItemWidget(QtWidgets.QFrame):
 
 		def __init__(self, master, pack_id):
 			super().__init__()
-			self.packID     = pack_id
-			self.master     = master
-			self.layout     = QtWidgets.QVBoxLayout(self)
 
-			self.setLineWidth(1); self.setFrameShape(QtWidgets.QFrame.Shape.Box)
-			self.setFixedHeight(150)
+			# Init normal
+			self.packID = pack_id
+			self.layout = QtWidgets.QVBoxLayout(self)
+			manager = managers.datapacks
 
-			self.text = QtWidgets.QLabel(self.packID, alignment=QtCore.Qt.AlignmentFlag.AlignCenter); self.text.setMaximumHeight(75); self.text.setWordWrap(True)
+			# Init legacy (to be removed)
+			self.master = master
+
+			# Widget styling
+			self.setLineWidth(1)
+			self.setFrameShape(QtWidgets.QFrame.Shape.Box)
+			self.setMinimumHeight(50)
+			self.setMaximumHeight(150)
+
+			# Widget labels
+			self.id_label = QtWidgets.QLabel(f"<h3>{self.packID}</h3>", alignment=QtCore.Qt.AlignmentFlag.AlignCenter); self.id_label.setMaximumHeight(75); self.id_label.setWordWrap(True)
 			self.removal_button = QtWidgets.QPushButton(); self.removal_button.setText("Remove"); self.removal_button.clicked.connect(self._remove_)
 			self.move_up_button = QtWidgets.QPushButton(); self.move_up_button.setText("Move up"); self.move_up_button.clicked.connect(self._move_up_)
 
-			desc = self.master.controller.get_pack_info(self.packID)["mcmeta"]["pack"]["description"]
-			if isinstance(desc, list):
-				string = str()
-				for entry in desc:
-					string += entry["text"]
-				desc = string
+			# Pack icon code
+			img = QtGui.QPixmap()
+			img.loadFromData(managers.datapacks.get_pack_icon(self.packID))
+			img = img.scaledToWidth(75)
+			self.icon = QtWidgets.QLabel(); self.icon.setPixmap(img)
 
-			self.desc = QtWidgets.QLabel(desc, alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
+			# Description code
+			desc = manager.get_pack_description(self.packID)
+			self.desc = QtWidgets.QLabel(desc)
 
-			self.layout.addWidget(self.text)
-			self.layout.addWidget(self.desc)
-			self.layout.addWidget(self.move_up_button)
-			self.layout.addWidget(self.removal_button)
+			# Layout time!!!!!!!!!
+			self.layout.addWidget(self.id_label)
+
+			self.layout_for_description = QtWidgets.QHBoxLayout()
+			self.layout_for_description.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
+			self.layout_for_description.addWidget(self.icon)
+			self.layout_for_description.addSpacing(5)
+			self.layout_for_description.addWidget(self.desc)
+
+			self.layout_for_buttons = QtWidgets.QHBoxLayout()
+
+			self.layout_for_buttons.addWidget(self.move_up_button)
+			self.layout_for_buttons.addWidget(self.removal_button)
+
+			self.layout.addLayout(self.layout_for_description)
+			self.layout.addLayout(self.layout_for_buttons)
 
 
 		def _move_up_(self):
 			self.master.controller.move_pack_up(self.packID)
-			self.master.update_list()
 			self.master.master.biome_list_widget.update_list()
+
+			managers.datapacks.move_up(self.packID)
+
+			self.master.update_list()
 
 
 		def _remove_(self):
 			self.master.controller.remove_pack(self.packID)
-			self.master.update_list()
 			self.master.master.biome_list_widget.update_list() # :)
+
+			managers.datapacks.remove_pack(self.packID)
+
+			self.master.update_list()
 
 
 class BiomeListWidget(QtWidgets.QWidget):
@@ -209,18 +257,22 @@ class BiomeListWidget(QtWidgets.QWidget):
 				self.master.controller.set_biome_preference(self.biomeID, None)
 
 
-if __name__ == "__main__":
-	app = QtWidgets.QApplication([])
-	app.setApplicationName("Datapack Toolkit")
-	app.setDesktopSettingsAware(True)
-	app.setStyle("fusion")
+class App(QtWidgets.QApplication):
+	def __init__(self):
+		self.setStyle(project.META.default_theme)
+		self.setDesktopSettingsAware(True)
+		super().__init__()
+		self.setApplicationName(project.META.app_name)
 
-	icon = QtGui.QPixmap()
-	icon.load(f"assets/app.ico")
-	app.setWindowIcon(icon)
+		icon = QtGui.QPixmap()
+		icon.load(f"assets/app.ico")
+		self.setWindowIcon(icon)
+
+
+if __name__ == "__main__":
+	app = App()
 
 	window = MainWindow(app)
-	window.resize(800, 600)
 	window.show()
 
 	sys.exit(app.exec())

@@ -1,15 +1,22 @@
 # The datapack manager for loading, unloading, analysing, and merging packs
-# indev!!!!!!
-import sys, os, zipfile, json
-from PySide6 import QtWidgets, QtGui
+import zipfile, json
+from typing import Type
+from zipfile import ZipFile
 
-# currently unused - will be improved and used later on
 class DatapackManager:
 	datapacks: dict = dict()
 	pack_order: list = list()
+	children_managers: list = list()
+	children_widgets: list = list()
 
 	def __init__(self):
 		pass
+
+	def __update_everything__(self):
+		for child in self.children_managers:
+			child.__update__()
+		#for child in self.children_widgets:
+			#child.__redraw__()
 
 	def load_pack(self, path: str) -> str:
 		archive = zipfile.ZipFile(path, 'r')
@@ -59,7 +66,12 @@ class DatapackManager:
 			self.update_pack_data(data["id"])
 			self.pack_order.append(data["id"])
 
+			self.__update_everything__()
+
 			return data["id"]
+
+	def add_child_manager(self, manager: object):
+		self.children_managers.append(manager)
 
 	def update_pack_data(self, dpack: str):
 		data = self.datapacks[dpack]
@@ -91,6 +103,28 @@ class DatapackManager:
 			description = string
 		data["description"] = description
 
+	def remove_pack(self, dpack: str) -> Type[ValueError] | str:
+		try:
+			self.pack_order.remove(dpack)
+			del self.datapacks[dpack]
+
+			self.__update_everything__()
+			return dpack
+
+		except ValueError:
+			print(f"DPManager: Tried to remove '{dpack}', but it is not present in list")
+			return ValueError
+
+	def move_up(self, dpack: str) -> list:
+		i = self.pack_order.index(dpack)
+		if i >= 1:
+			self.pack_order.remove(dpack)
+			self.pack_order.insert(i-1, dpack)
+		self.__update_everything__()
+		return self.pack_order
+
+	########## Getters ##########
+
 	def get_pack_data(self, dpack: str) -> dict:
 		return self.datapacks[dpack]
 
@@ -100,34 +134,49 @@ class DatapackManager:
 	def get_pack_icon(self, dpack: str) -> bytes:
 		return self.datapacks[dpack]["icon"]
 
+	def get_pack_modules(self, dpack: str) -> set:
+		return self.datapacks[dpack]["modules"]
+
 	def get_pack_list(self) -> list:
 		return self.pack_order
 
-
-test = DatapackManager()
-packid1 = test.load_pack(f"C:/Users/{os.getlogin()}/Downloads/Geophilic v3.4 f15-71.dp.zip")
-packid2 = test.load_pack(f"C:/Users/{os.getlogin()}/Downloads/Terralith_1.21_v2.5.8.zip")
-print(test.get_pack_list())
+	def open_pack_archive(self, dpack: str) -> ZipFile:
+		archive = zipfile.ZipFile(self.get_pack_data(dpack)["path"], 'r')
+		return archive
 
 
-pack = packid2
-
-
-app = QtWidgets.QApplication([])
-app.setApplicationName(test.get_pack_data(pack)["name"])
-app.setDesktopSettingsAware(True)
-app.setStyle("fusion")
-
-msg = QtWidgets.QMessageBox()
-msg.setMaximumWidth(1000)
-msg.setText(test.get_pack_description(pack))
-
-img = QtGui.QPixmap()
-img.loadFromData(test.get_pack_icon(pack))
-img = img.scaledToWidth(50)
-
-msg.setIconPixmap(img)
-
-msg.show()
-
-sys.exit(app.exec())
+#from PySide6 import QtWidgets, QtGui
+# from src.modules.StructureSpacer import StructureSpacer
+#
+# test = DatapackManager()
+# structures_test = StructureSpacer(test)
+#
+# packid1 = test.load_pack(f"C:/Users/{os.getlogin()}/Downloads/minecraft-1.21.5-client-dp.jar")
+# packid2 = test.load_pack(f"C:/Users/{os.getlogin()}/Downloads/Terralith_1.21_v2.5.8.zip")
+# pack = packid2
+#
+# print(test.get_pack_list())
+#
+# print(structures_test.get_structure_set_list())
+#
+# structures_test.set_spacing("minecraft:villages", 99)
+#
+#
+# app = QtWidgets.QApplication([])
+# app.setApplicationName(test.get_pack_data(pack)["name"])
+# app.setDesktopSettingsAware(True)
+# app.setStyle("fusion")
+#
+# msg = QtWidgets.QMessageBox()
+# msg.setMaximumWidth(1000)
+# msg.setText(test.get_pack_description(pack))
+#
+# img = QtGui.QPixmap()
+# img.loadFromData(test.get_pack_icon(pack))
+# img = img.scaledToWidth(50)
+#
+# msg.setIconPixmap(img)
+#
+# msg.show()
+#
+# sys.exit(app.exec())

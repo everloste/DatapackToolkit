@@ -1,5 +1,6 @@
 # The "About Datapack Tools" window
 from PySide6 import QtWidgets, QtCore
+from src.data import project
 
 class AboutWidget(QtWidgets.QDialog):
 	def __init__(self):
@@ -8,7 +9,7 @@ class AboutWidget(QtWidgets.QDialog):
 		self.setFixedWidth(400)
 
 		# The program title
-		self.text = QtWidgets.QLabel('''<h1 style='color:#beabee;'>Datapack Toolkit</h1> v0.25.4.6<br>''')
+		self.text = QtWidgets.QLabel(f'''<h1 style='color:#beabee;'>Datapack Toolkit</h1> v{project.META.app_version}<br>''')
 
 		# App description
 		self.desc = QtWidgets.QLabel("Easily configure Minecraft worldgen datapacks.")
