@@ -15,8 +15,8 @@ class DatapackManager:
 	def __update_everything__(self):
 		for child in self.children_managers:
 			child.__update__()
-		#for child in self.children_widgets:
-			#child.__redraw__()
+		for child in self.children_widgets:
+			child.__redraw__()
 
 	def load_pack(self, path: str) -> str:
 		archive = zipfile.ZipFile(path, 'r')
@@ -72,6 +72,9 @@ class DatapackManager:
 
 	def add_child_manager(self, manager: object):
 		self.children_managers.append(manager)
+
+	def add_child_widget(self, widget: object):
+		self.children_widgets.append(widget)
 
 	def update_pack_data(self, dpack: str):
 		data = self.datapacks[dpack]

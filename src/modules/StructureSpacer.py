@@ -59,6 +59,8 @@ class StructureSpacer:
 		def __init__(self, setID: str, source_json: dict = None):
 			self.setID = setID
 			self.source_json = source_json
+			self.spacing_original = self.source_json["placement"]["spacing"]
+			self.separation_original = self.source_json["placement"]["separation"]
 
 		def set_spacing(self, n: int):
 			self.spacing_new = n
@@ -73,6 +75,12 @@ class StructureSpacer:
 	def get_structure_set_list(self) -> list:
 		return self.list_of_structure_sets
 
+	def get_original_spacing(self, setID: str) -> int:
+		return self.structure_set_objects[setID].spacing_original
+
+	def get_original_separation(self, setID: str) -> int:
+		return self.structure_set_objects[setID].separation_original
+
 	########## Setters ##########
 
 	def set_spacing(self, setID: str, n: int):
@@ -80,3 +88,9 @@ class StructureSpacer:
 
 	def set_separation(self, setID: str, n: int):
 		self.structure_set_objects[setID].set_separation(n)
+
+	def reset_spacing(self, setID: str):
+		print("THIS DOES NOTHING YET")
+
+	def reset_separation(self, setID: str):
+		print("THIS DOES NOTHING YET")

@@ -14,9 +14,9 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.menu       = self.menuBar()
 
 		file_menu = self.menu.addMenu("Datapack")
-		import_action = file_menu.addAction("Import datapack")
+		import_action = file_menu.addAction("Open")
 		import_action.triggered.connect(self.import_datapacks)
-		export_action = file_menu.addAction("Export datapack(s)")
+		export_action = file_menu.addAction("Export")
 		export_action.triggered.connect(self.export_datapacks)
 
 		about_menu = self.menu.addMenu("About")
@@ -71,7 +71,7 @@ class MainWidget(QtWidgets.QWidget):
 
 		self.workspace = QtWidgets.QTabWidget()
 
-		self.structure_list_widget = QtWidgets.QWidget()
+		self.structure_list_widget = StructureSetListWidget()
 
 
 		# Layout time!!!!!!!!!!
@@ -81,9 +81,14 @@ class MainWidget(QtWidgets.QWidget):
 		self.biome_list_scroll_area.setWidget(self.biome_list_widget)
 		self.biome_list_scroll_area.setWidgetResizable(True)
 		#self.layout.addWidget(self.biome_list_scroll_area)
-		self.workspace.addTab(self.biome_list_scroll_area, "Biome providers")
-		self.workspace.addTab(self.structure_list_widget, "Structures")
 
+		self.sset_scroll = QtWidgets.QScrollArea()
+		self.sset_scroll.setWidget(self.structure_list_widget)
+		self.sset_scroll.setWidgetResizable(True)
+
+
+		self.workspace.addTab(self.biome_list_scroll_area, "Biome providers")
+		self.workspace.addTab(self.sset_scroll, "Structure sets")
 		self.layout.addWidget(self.workspace)
 
 
@@ -255,6 +260,83 @@ class BiomeListWidget(QtWidgets.QWidget):
 				self.master.controller.set_biome_preference(self.biomeID, selection)
 			else:
 				self.master.controller.set_biome_preference(self.biomeID, None)
+
+
+class StructureSetListWidget(QtWidgets.QWidget):
+	def __init__(self):
+		super().__init__()
+		self.entries        = list()
+		self.layout         = QtWidgets.QVBoxLayout(self)
+		self.manager        = managers.structure_sets
+
+		managers.datapacks.add_child_widget(self)
+		self.layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+
+		self.__redraw__()
+
+	def __redraw__(self):
+		for entry in self.entries:
+			self.layout.removeWidget(entry)
+			entry.deleteLater()
+
+		self.entries.clear()
+
+		for structure_set in self.manager.get_structure_set_list():
+			entry = self.ItemWidget(structure_set)
+			self.entries.append(entry)
+			self.layout.addWidget(entry)
+
+		self.update()
+
+	class ItemWidget(QtWidgets.QWidget):
+		def __init__(self, setID: str):
+			super().__init__()
+			self.structure_setID = setID
+			self.text = QtWidgets.QLabel(setID)
+
+			# Buttons
+			self.spacing_entry = QtWidgets.QDoubleSpinBox(decimals=0, suffix=" chunks", minimum=0, maximum=4096, value=managers.structure_sets.get_original_spacing(self.structure_setID))
+			self.separation_entry = QtWidgets.QDoubleSpinBox(decimals=0, suffix=" chunks", minimum=0, maximum=4096, value=managers.structure_sets.get_original_separation(self.structure_setID))
+			self.spacing_entry.valueChanged.connect(self.__spacing_changed__)
+			self.separation_entry.valueChanged.connect(self.__separation_changed__)
+			self.spacing_label = QtWidgets.QLabel("Spacing:")
+			self.spacing_label.setToolTip("Average distance between two structures.")
+			self.separation_label = QtWidgets.QLabel("Separation:")
+			self.separation_label.setToolTip("Minimum distance between two structures.")
+			self.spacing_layout = QtWidgets.QHBoxLayout()
+			self.spacing_layout.addWidget(self.spacing_label)
+			self.spacing_layout.addWidget(self.spacing_entry)
+			self.separation_layout = QtWidgets.QHBoxLayout()
+			self.separation_layout.addWidget(self.separation_label)
+			self.separation_layout.addWidget(self.separation_entry)
+			self.config_layout = QtWidgets.QVBoxLayout()
+			self.config_layout.addLayout(self.spacing_layout)
+			self.config_layout.addLayout(self.separation_layout)
+			self.reset_button = QtWidgets.QPushButton("Reset to original")
+			self.reset_button.pressed.connect(self.reset_options)
+			self.config_layout.addWidget(self.reset_button)
+
+			# Layout time!!
+			self.layout = QtWidgets.QHBoxLayout(self)
+			self.layout.addWidget(self.text)
+			self.layout.addLayout(self.config_layout)
+
+		def reset_options(self):
+			managers.structure_sets.reset_spacing(self.structure_setID)
+			managers.structure_sets.reset_separation(self.structure_setID)
+
+		def __spacing_changed__(self, n: float):
+			print(n)
+			if n == managers.structure_sets.get_original_spacing(self.structure_setID):
+				managers.structure_sets.reset_spacing(self.structure_setID)
+			else:
+				managers.structure_sets.set_spacing(self.structure_setID, n)
+
+		def __separation_changed__(self, n: float):
+			if n == managers.structure_sets.get_original_separation(self.structure_setID):
+				managers.structure_sets.reset_separation(self.structure_setID)
+			else:
+				managers.structure_sets.set_separation(self.structure_setID, n)
 
 
 class App(QtWidgets.QApplication):
