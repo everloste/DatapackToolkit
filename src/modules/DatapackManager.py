@@ -56,7 +56,7 @@ class DatapackManager:
 			for file in files:
 				if "/structure_set/" in file:
 					modules.add("structure_set")
-				elif "/biome/" in file:
+				elif "/worldgen/biome/" in file:
 					modules.add("biome")
 				elif "/template_pool/" in file:
 					modules.add("template_pool")

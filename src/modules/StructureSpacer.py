@@ -102,5 +102,4 @@ class StructureSpacer:
 		print("THIS DOES NOTHING YET")
 
 	def apply_changes_to_pack(self, path: str):
-
 		pass
