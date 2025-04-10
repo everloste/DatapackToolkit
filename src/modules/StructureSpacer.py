@@ -100,3 +100,7 @@ class StructureSpacer:
 
 	def reset_separation(self, setID: str):
 		print("THIS DOES NOTHING YET")
+
+	def apply_changes_to_pack(self, path: str):
+
+		pass

@@ -1,7 +1,8 @@
 # The datapack manager for loading, unloading, analysing, and merging packs
-import zipfile, json
+import zipfile, json, os, shutil
 from typing import Type
 from zipfile import ZipFile
+from src.data.project import META
 
 class DatapackManager:
 	datapacks: dict = dict()
@@ -12,7 +13,7 @@ class DatapackManager:
 	def __init__(self):
 		pass
 
-	def __update_everything__(self):
+	def __update_children__(self):
 		for child in self.children_managers:
 			child.__update__()
 		for child in self.children_widgets:
@@ -39,34 +40,40 @@ class DatapackManager:
 				"icon":         bytes(),
 			}
 
+			# Make sure we can't load the same pack twice
+			if data["id"] in self.get_pack_list():
+				raise FileExistsError
+
+			# Check if a pack icon exists
 			try:
 				data["icon"] = archive.read("pack.png")
 			except KeyError:
 				data["icon"] = None
 
+			# Detect modules:
 			# Modules are things that the datapack modifies - biomes, structures, etc. - list only things that are relevant for this program
-			files = archive.namelist(); modules = list()
+			files = archive.namelist(); modules = set()
 			for file in files:
 				if "/structure_set/" in file:
-					modules.append("structure_set")
+					modules.add("structure_set")
 				elif "/biome/" in file:
-					modules.append("biome")
+					modules.add("biome")
 				elif "/template_pool/" in file:
-					modules.append("template_pool")
+					modules.add("template_pool")
 				elif "/loot_table/" in file:
-					modules.append("loot_table")
+					modules.add("loot_table")
 				elif "minecraft/dimension/overworld.json" in file:
-					modules.append("dimension/overworld")
-
+					modules.add("dimension/overworld")
 			data["modules"] = set(modules)
 
+			# Close archive and finalise
 			archive.close()
 
 			self.datapacks[data["id"]] = data.copy()
 			self.update_pack_data(data["id"])
 			self.pack_order.append(data["id"])
 
-			self.__update_everything__()
+			self.__update_children__()
 
 			return data["id"]
 
@@ -111,7 +118,7 @@ class DatapackManager:
 			self.pack_order.remove(dpack)
 			del self.datapacks[dpack]
 
-			self.__update_everything__()
+			self.__update_children__()
 			return dpack
 
 		except ValueError:
@@ -123,7 +130,7 @@ class DatapackManager:
 		if i >= 1:
 			self.pack_order.remove(dpack)
 			self.pack_order.insert(i-1, dpack)
-		self.__update_everything__()
+		self.__update_children__()
 		return self.pack_order
 
 	########## Getters ##########
@@ -143,43 +150,58 @@ class DatapackManager:
 	def get_pack_list(self) -> list:
 		return self.pack_order
 
+	def get_pack_path(self, dpack: str) -> str:
+		return self.datapacks[dpack]["path"]
+
+	def get_pack_directory(self, dpack: str) -> str:
+		return self.datapacks[dpack]["directory"]
+
 	def open_pack_archive(self, dpack: str) -> ZipFile:
 		archive = zipfile.ZipFile(self.get_pack_data(dpack)["path"], 'r')
 		return archive
 
+	########## Export ##########
 
-#from PySide6 import QtWidgets, QtGui
-# from src.modules.StructureSpacer import StructureSpacer
+	def export_packs(self, export_dir: str) -> bool:
+
+		# Create temporary directory to work in
+		temp_dir = f"{META.root}/temp"
+		if not os.path.exists(temp_dir):
+			os.makedirs(temp_dir)
+
+		# Copy datapacks to temporary directory
+		for pack in self.get_pack_list():
+			path = self.get_pack_path(pack)
+
+			if not os.path.exists(path):
+				raise FileNotFoundError
+
+			temp_path = f"{temp_dir}/{pack}"
+
+			shutil.copy(path, temp_path)
+
+			# Now we may edit it
+			for child_manager in self.children_managers:
+				child_manager.apply_changes_to_pack(temp_path)
+
+			# And export it
+			pack_rename = f"Modified copy of {pack}"
+			new_path = f"{export_dir}/{pack_rename}"
+			shutil.move(temp_path, new_path)
+
+		# Delete temporary directory
+		shutil.rmtree(temp_dir)
+
+		return True
+
+
+# def disable_files_in_zip(zip_path, files: list):
+# 	temp_zip_path = zip_path + '.temp'
 #
-# test = DatapackManager()
-# structures_test = StructureSpacer(test)
+# 	with zipfile.ZipFile(zip_path, 'r') as zin, zipfile.ZipFile(temp_zip_path, 'w') as zout:
+# 		for item in zin.infolist():
+# 			original_data = zin.read(item.filename)
+# 			target_name = new_name if item.filename == old_name else item.filename
+# 			zout.writestr(target_name, original_data)
 #
-# packid1 = test.load_pack(f"C:/Users/{os.getlogin()}/Downloads/minecraft-1.21.5-client-dp.jar")
-# packid2 = test.load_pack(f"C:/Users/{os.getlogin()}/Downloads/Terralith_1.21_v2.5.8.zip")
-# pack = packid2
-#
-# print(test.get_pack_list())
-#
-# print(structures_test.get_structure_set_list())
-#
-# structures_test.set_spacing("minecraft:villages", 99)
-#
-#
-# app = QtWidgets.QApplication([])
-# app.setApplicationName(test.get_pack_data(pack)["name"])
-# app.setDesktopSettingsAware(True)
-# app.setStyle("fusion")
-#
-# msg = QtWidgets.QMessageBox()
-# msg.setMaximumWidth(1000)
-# msg.setText(test.get_pack_description(pack))
-#
-# img = QtGui.QPixmap()
-# img.loadFromData(test.get_pack_icon(pack))
-# img = img.scaledToWidth(50)
-#
-# msg.setIconPixmap(img)
-#
-# msg.show()
-#
-# sys.exit(app.exec())
+# 	os.replace(temp_zip_path, zip_path)

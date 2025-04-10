@@ -48,6 +48,10 @@ class MainWindow(QtWidgets.QMainWindow):
 	def export_datapacks(self):
 		dlg = Dialogs.ConfirmExportDialog()
 		if dlg.exec():
+
+			export_directory = QtWidgets.QFileDialog.getExistingDirectory()
+			managers.datapacks.export_packs(export_directory)
+
 			if self.biome_manager.export_datapacks() is not None:
 				msgBox = QtWidgets.QMessageBox()
 				msgBox.setText("Success :3")
@@ -136,8 +140,9 @@ class DatapackListWidget(QtWidgets.QListWidget):
 			self.master = master
 
 			# Widget styling
-			self.setLineWidth(1)
+			self.setStyleSheet("DatapackItemWidget {border: 2px solid #808080; border-radius: 10px; background-color: #151514}")
 			self.setFrameShape(QtWidgets.QFrame.Shape.Box)
+			self.setLineWidth(1)
 			self.setMinimumHeight(50)
 			self.setMaximumHeight(150)
 
@@ -149,7 +154,7 @@ class DatapackListWidget(QtWidgets.QListWidget):
 			# Pack icon code
 			img = QtGui.QPixmap()
 			img.loadFromData(managers.datapacks.get_pack_icon(self.packID))
-			img = img.scaledToWidth(75)
+			img = img.scaledToWidth(50)
 			self.icon = QtWidgets.QLabel(); self.icon.setPixmap(img)
 
 			# Description code
@@ -293,6 +298,7 @@ class StructureSetListWidget(QtWidgets.QWidget):
 			super().__init__()
 			self.structure_setID = setID
 			self.text = QtWidgets.QLabel(setID)
+			self.text.setFixedWidth(200)
 
 			# Buttons
 			self.spacing_entry = QtWidgets.QDoubleSpinBox(decimals=0, suffix=" chunks", minimum=0, maximum=4096, value=managers.structure_sets.get_original_spacing(self.structure_setID))
@@ -313,6 +319,7 @@ class StructureSetListWidget(QtWidgets.QWidget):
 			self.config_layout.addLayout(self.spacing_layout)
 			self.config_layout.addLayout(self.separation_layout)
 			self.reset_button = QtWidgets.QPushButton("Reset to original")
+			self.reset_button.setMaximumWidth(200)
 			self.reset_button.pressed.connect(self.reset_options)
 			self.config_layout.addWidget(self.reset_button)
 
@@ -344,10 +351,11 @@ class App(QtWidgets.QApplication):
 		self.setStyle(project.META.default_theme)
 		self.setDesktopSettingsAware(True)
 		super().__init__()
+		self.setStyleSheet("QTabBar::tab:selected {font-weight: bold}")
 		self.setApplicationName(project.META.app_name)
 
 		icon = QtGui.QPixmap()
-		icon.load(f"assets/app.ico")
+		icon.load(f"assets/icon.png")
 		self.setWindowIcon(icon)
 
 
