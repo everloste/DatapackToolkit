@@ -1,4 +1,4 @@
-
+from dataclasses import dataclass
 
 def biome_id_from_path(path: str) -> str:
 	split_path = path.split("/")
@@ -55,24 +55,24 @@ class BiomeBlender:
 				if biome in self.biomes_in_pack[pack]:
 					packs_with_biome.append(pack)
 
-			self.biome_objects[biome] = self.BiomeItem(biome)
-			self.biome_objects[biome].packs = packs_with_biome
-			self.biome_objects[biome].preference = packs_with_biome[0]
+			if biome in self.biome_objects:
+				if self.get_biome_changed(biome):
+					self.biome_objects[biome].packs = packs_with_biome
+				else:
+					self.biome_objects[biome] = self.BiomeItem(biomeID=biome, packs=packs_with_biome, preference=packs_with_biome[0])
+			else:
+				self.biome_objects[biome] = self.BiomeItem(biomeID=biome, packs=packs_with_biome, preference=packs_with_biome[0])
 
+	#################### Biome handler dataclass ####################
 
+	@dataclass(slots=True)
 	class BiomeItem:
-		id: str = ""
-		packs: list = list()
-		preference: str = ""
+		biomeID: str
+		packs: list
+		preference: str | None = None
 		changed: bool = False
 
-		def __init__(self, biomeID):
-			self.id = biomeID
-
-
-	def set_biome_preference(self, biomeID: str, preference: str):
-		self.biome_objects[biomeID].preference = preference
-		self.biome_objects[biomeID].changed = True
+	#################### Getter functions ####################
 
 	def get_biome_preference(self, biomeID):
 		return self.biome_objects[biomeID].preference
@@ -83,5 +83,11 @@ class BiomeBlender:
 	def get_packs_with_biome(self, biomeID: str) -> list:
 		return self.biome_objects[biomeID].packs
 
+	#################### Setting functions ####################
+
 	def apply_changes_to_pack(self, path: str):
 		pass
+
+	def set_biome_preference(self, biomeID: str, preference: str):
+		self.biome_objects[biomeID].preference = preference
+		self.biome_objects[biomeID].changed = True
