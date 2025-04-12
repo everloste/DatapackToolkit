@@ -1,8 +1,9 @@
 # Datapack Toolkit
-An easy worldgen datapack configuration tool made in a weekend.
+An easy-to-use Minecraft worldgen datapack configuration tool made in a weekend.
 
-Currently supports biome definition ordering/removal.
-That means you can pick and choose which biome overhaul you want, from whichever datapacks you want.
+Currently supports:
+- Picking biome definition providers
+- Editing structure set placement
 
 The result are modified datapacks ready to be used.
 
@@ -10,8 +11,8 @@ The result are modified datapacks ready to be used.
 Simply download the latest version and run the app!
 No installation is necessary.
 
-Load your datapack(s) by clicking ***Import datapack*** in the top left.
-Export modified versions by clicking ***Export datapack(s)***.
+Load your datapack(s) by clicking ***Load*** in the top left.
+Export modified versions by clicking ***Export***.
 
 ## Working on Datapack Toolkit
 
