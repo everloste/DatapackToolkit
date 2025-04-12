@@ -42,10 +42,7 @@ If you're good to go, run:
 
 Package the app in your terminal. Make sure you're in the project directory and run the following command to package the app:
 
-    pyinstaller --onefile --noconsole --icon "src/assets/icon.ico" --name "dptoolkit" "src/main.py"
-
-Include the assets folder with the app for the icon to work properly.
-(I know there's a command.. I'll get around to streamlining this later... For now this is fine...)
+    pyinstaller --onefile --noconsole --icon "src/assets/icon.ico" --add-data="src/assets":"assets" --name "dptoolkit" "src/main.py"
 
 ## Plans for Datapack Toolkit
 
