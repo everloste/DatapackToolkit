@@ -39,7 +39,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 		# Legacy BiomeBlender code (to be removed later)
 		#self.biome_manager.add_pack(location)
-		self.widget.biome_list_widget.__redraw__()
+		#self.widget.biome_list_widget.__redraw__()
 		self.widget.biome_list_scroll_area.update()
 
 	@QtCore.Slot()
@@ -47,13 +47,16 @@ class MainWindow(QtWidgets.QMainWindow):
 		dlg = Dialogs.ConfirmExportDialog()
 		if dlg.exec():
 
-			export_directory = QtWidgets.QFileDialog.getExistingDirectory()
-			managers.datapacks.export_packs(export_directory)
+			info = Dialogs.ExportDetailsDialog().exec()
 
-			# if self.biome_manager.export_datapacks() is not None:
-			# 	msgBox = QtWidgets.QMessageBox()
-			# 	msgBox.setText("Success :3")
-			# 	msgBox.exec()
+			if info != 0:
+				export_directory = QtWidgets.QFileDialog.getExistingDirectory()
+				result = managers.datapacks.export_packs(export_directory, compress=info[0], level=info[1])
+
+				if result is not None:
+					msgBox = QtWidgets.QMessageBox()
+					msgBox.setText("Success :3")
+					msgBox.exec()
 
 
 	@QtCore.Slot()
@@ -139,7 +142,7 @@ class DatapackListWidget(QtWidgets.QListWidget):
 			self.master = master
 
 			# Widget styling
-			self.setStyleSheet("DatapackItemWidget {border: 2px solid #808080; border-radius: 10px; background-color: #151514}")
+			self.setStyleSheet("DatapackItemWidget {border: 2px solid #808080; border-radius: 10px}")
 			self.setFrameShape(QtWidgets.QFrame.Shape.Box)
 			self.setLineWidth(1)
 			self.setMinimumHeight(50)
@@ -153,7 +156,7 @@ class DatapackListWidget(QtWidgets.QListWidget):
 			# Pack icon code
 			img = QtGui.QPixmap()
 			img.loadFromData(managers.datapacks.get_pack_icon(self.packID))
-			img = img.scaledToWidth(50)
+			img = img.scaledToWidth(75)
 			self.icon = QtWidgets.QLabel(); self.icon.setPixmap(img)
 
 			# Description code

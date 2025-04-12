@@ -1,8 +1,10 @@
 # The datapack manager for loading, unloading, analysing, and merging packs
 import zipfile, json, os, shutil
 from typing import Type
-from zipfile import ZipFile
+from zipfile import ZipFile, ZIP_DEFLATED, ZIP_STORED
 from src.data.project import META
+from dataclasses import dataclass
+
 
 class DatapackManager:
 	datapacks: dict = dict()
@@ -17,6 +19,7 @@ class DatapackManager:
 		for child in self.children_managers:
 			child.__update__()
 		for child in self.children_widgets:
+			print(f"Updating {child}")
 			child.__redraw__()
 
 	def load_pack(self, path: str) -> str:
@@ -162,7 +165,7 @@ class DatapackManager:
 
 	########## Export ##########
 
-	def export_packs(self, export_dir: str) -> bool:
+	def export_packs(self, export_dir: str, compress: bool = True, level: int = 5) -> bool:
 
 		# Create temporary directory to work in
 		temp_dir = f"{META.root}/temp"
@@ -180,28 +183,67 @@ class DatapackManager:
 
 			shutil.copy(path, temp_path)
 
+			# Open archive to make changes
+			archive = zipfile.ZipFile(temp_path, "r")
+			datapack = self.Datapack(archive=archive, path=temp_path)
+
 			# Now we may edit it
 			for child_manager in self.children_managers:
-				child_manager.apply_changes_to_pack(temp_path)
+				child_manager.apply_changes_to_pack(datapack)
+
+			datapack.apply(compress=compress, level=level)
+
+			# Close it
+			datapack.archive.close()
+			del datapack
 
 			# And export it
+			copy_path = f"{temp_path}.temp"
 			pack_rename = f"Modified copy of {pack}"
 			new_path = f"{export_dir}/{pack_rename}"
-			shutil.move(temp_path, new_path)
+			shutil.move(copy_path, new_path)
 
 		# Delete temporary directory
 		shutil.rmtree(temp_dir)
 
 		return True
 
+	@dataclass(slots=True)
+	class Datapack:
+		path: str
+		archive: zipfile.ZipFile
+		name: str = ""
+		files_to_disable = list()
+		files_to_enable = list()
 
-# def disable_files_in_zip(zip_path, files: list):
-# 	temp_zip_path = zip_path + '.temp'
-#
-# 	with zipfile.ZipFile(zip_path, 'r') as zin, zipfile.ZipFile(temp_zip_path, 'w') as zout:
-# 		for item in zin.infolist():
-# 			original_data = zin.read(item.filename)
-# 			target_name = new_name if item.filename == old_name else item.filename
-# 			zout.writestr(target_name, original_data)
-#
-# 	os.replace(temp_zip_path, zip_path)
+		def __post_init__(self):
+			self.name = self.path.split("/")[-1]
+
+		def disable_files(self, files: list | tuple):
+			[self.files_to_disable.append(file) for file in files]
+			print(files)
+
+		def enable_files(self, files: list | tuple):
+			[self.files_to_enable.append(file) for file in files]
+
+		def modify_file(self, path: str, new_content: str):
+			pass
+
+		def apply(self, compress: bool = True, level: int = 5):
+			temp_path = f"{self.path}.temp"
+
+			compression = ZIP_DEFLATED if compress == True else ZIP_STORED
+			with zipfile.ZipFile(temp_path, "w", compression=compression, compresslevel=level) as zout:
+				for item in self.archive.infolist():
+					original_data = self.archive.read(item.filename)
+					new_name = item.filename
+
+					for rule in self.files_to_disable:
+						if rule in item.filename:
+							new_name = f"{item.filename}.disabled"
+
+					for rule in self.files_to_enable:
+						if f"{rule}.disabled" in item.filename:
+							new_name = item.filename.removesuffix(".disabled")
+
+					zout.writestr(new_name, original_data)

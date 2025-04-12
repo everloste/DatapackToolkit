@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from src.modules.DatapackManager import DatapackManager
 
 def biome_id_from_path(path: str) -> str:
 	split_path = path.split("/")
@@ -85,9 +86,25 @@ class BiomeBlender:
 
 	#################### Setting functions ####################
 
-	def apply_changes_to_pack(self, path: str):
-		pass
-
 	def set_biome_preference(self, biomeID: str, preference: str):
 		self.biome_objects[biomeID].preference = preference
 		self.biome_objects[biomeID].changed = True
+
+	def apply_changes_to_pack(self, datapack_object: DatapackManager.Datapack):
+		pack_name = datapack_object.name
+		biomes_to_disable = list(); files_to_disable = list()
+
+		for biome in self.biome_list:
+			if pack_name in self.get_packs_with_biome(biome):
+				if pack_name != self.get_biome_preference(biome):
+					biomes_to_disable.append(biome)
+
+					biome_path = biome.split(":")
+					biome_path = f"/{biome_path[0]}/worldgen/biome/{biome_path[1]}.json"
+
+					files_to_disable.append(biome_path)
+
+				elif pack_name == self.get_biome_preference(biome):
+					pass
+
+		datapack_object.disable_files(files=files_to_disable)
