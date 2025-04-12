@@ -1,4 +1,4 @@
-# Datapack Toolkit
+# _Datapack Toolkit_
 An easy-to-use Minecraft worldgen datapack configuration tool made in a weekend.
 
 Currently supports:
