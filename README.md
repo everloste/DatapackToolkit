@@ -29,10 +29,6 @@ You only need **PySide6** to work on the app:
 
 That's all. Have fun reating my spaghetti :3
 
-I should note that on the off-chance anybody _will_ try to work on the code,
-the current datapack and biome management class `biomeblender` will later be removed in favour of multiple, more flexible options.
-See `datapackmanager`.
-
 ### Packaging
 
 Datapack Toolkit is packaged using PyInstaller.
@@ -47,14 +43,11 @@ Package the app in your terminal. Make sure you're in the project directory and 
 
 ## Plans for Datapack Toolkit
 
-There is currently one feature _definitely_ planned to be implemented (by me):
-- Structure generation configuration
-  - I.e. spacing and separation
-
-There are other thins I would like to do:
+There are a few thins I would like to do:
 - Biome removal/replacement (such as for _Terralith_ or _Alpine_)
 - Noise/density function scale adjustment (such as for _Continents_)
+- A format to allow datapacks to define their own config screens
 
-Internally, datapack and biome management will later be completely separated, but y'know. Spaghetti for now... mhmm.. i wan spaghetti now...
+and now... mhmm.. i wan spaghetti now...
 
 ![](https://raw.githubusercontent.com/everloste/DatapackToolkit/refs/heads/main/code.png)
