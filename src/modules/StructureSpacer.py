@@ -3,6 +3,8 @@
 #from src.data.project import META
 import json
 
+from src.modules.DatapackManager import DatapackManager
+
 
 class StructureSpacer:
 	relevant_packs = set()
@@ -51,55 +53,86 @@ class StructureSpacer:
 		setID = str()
 		modified: bool = False
 		source_json: dict
-		spacing_original: int = 0
-		separation_original: int = 0
-		spacing_new: int = 0
-		separation_new: int = 0
 		type: str = "minecraft:random_spread"
+		placement_data = dict()
+		original_placement_data = dict()
 
 		def __init__(self, setID: str, source_json: dict = None):
 			self.setID = setID
 			self.source_json = source_json
 
-			if self.source_json["placement"]["type"] == "minecraft:random_spread":
-				self.spacing_original = self.source_json["placement"]["spacing"]
-				self.separation_original = self.source_json["placement"]["separation"]
-			elif self.source_json["placement"]["type"] == "minecraft:concentric_rings":
-				self.spacing_original = self.source_json["placement"]["distance"]
-				self.type = "minecraft:concentric_rings"
+			self.type = self.source_json["placement"]["type"]
+			self.placement_data = self.source_json["placement"].copy()
+			del self.placement_data["type"]
+			del self.placement_data["salt"]
+			if "spread_type" in self.placement_data:
+				del self.placement_data["spread_type"]
+			if "frequency_reduction_method" in self.placement_data:
+				del self.placement_data["frequency_reduction_method"]
+			if "preferred_biomes" in self.placement_data:
+				del self.placement_data["preferred_biomes"]
+			if "exclusion_zone" in self.placement_data:
+				del self.placement_data["exclusion_zone"]
+			if "locate_offset" in self.placement_data:
+				del self.placement_data["locate_offset"]
 
-		def set_spacing(self, n: int):
-			self.spacing_new = n
+			self.original_placement_data = self.placement_data.copy()
+
+		def set_placement_data(self, key: str, n: int):
+			self.placement_data[key] = n
 			self.modified = True
 
-		def set_separation(self, n: int):
-			self.separation_new = n
-			self.modified = True
+		def reset_placement_data(self):
+			self.placement_data = self.original_placement_data.copy()
+			self.modified = False
 
 	########## Getters ##########
 
 	def get_structure_set_list(self) -> list:
 		return self.list_of_structure_sets
 
-	def get_original_spacing(self, setID: str) -> int:
-		return self.structure_set_objects[setID].spacing_original
+	def get_original_placement_data(self, setID: str) -> dict:
+		return self.structure_set_objects[setID].original_placement_data
 
-	def get_original_separation(self, setID: str) -> int:
-		return self.structure_set_objects[setID].separation_original
+	def get_placement_data(self, setID: str) -> dict:
+		return self.structure_set_objects[setID].placement_data
+
+	def get_modified(self, setID: str) -> bool:
+		return self.structure_set_objects[setID].modified
+
+	def get_json(self, setID: str) -> dict:
+		return self.structure_set_objects[setID].source_json
+
+	def get_placement_type(self, setID: str) -> str:
+		return self.structure_set_objects[setID].type
 
 	########## Setters ##########
 
-	def set_spacing(self, setID: str, n: int):
-		self.structure_set_objects[setID].set_spacing(n)
+	def set_placement(self, setID: str, key: str, n: int):
+		self.structure_set_objects[setID].set_placement_data(key, n)
 
-	def set_separation(self, setID: str, n: int):
-		self.structure_set_objects[setID].set_separation(n)
+	def reset_placement(self, setID: str):
+		self.structure_set_objects[setID].reset_placement_data()
 
-	def reset_spacing(self, setID: str):
-		print("THIS DOES NOTHING YET")
+	def apply_changes_to_pack(self, datapack_object: DatapackManager.Datapack):
+		structure_sets = self.get_structure_set_list()
 
-	def reset_separation(self, setID: str):
-		print("THIS DOES NOTHING YET")
+		for structure_set in structure_sets:
+			if self.get_modified(structure_set):
 
-	def apply_changes_to_pack(self, path: str):
-		pass
+				# Get path to structure set file
+				path = structure_set.split(":")
+				path = f"/{path[0]}/worldgen/structure_set/{path[1]}.json"
+
+				# Modify the JSON data
+				data = self.get_json(structure_set)
+
+				placement_data = self.get_placement_data(structure_set)
+				for key in placement_data:
+					data["placement"][key] = placement_data[key]
+
+				# Inject into final mixer
+				datapack_object.rewrite_file(path, json.dumps(data, indent=4))
+
+			# It will not get overwritten if it doesn't exist in the original,
+			# but note we are dumping all structure sets there

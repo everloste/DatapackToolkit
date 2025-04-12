@@ -1,8 +1,6 @@
 import sys
 from PySide6 import QtCore, QtWidgets, QtGui
-from src.modules import Dialogs, biomeblender, InfoWindow
-from src.modules.DatapackManager import DatapackManager
-from src.modules.StructureSpacer import StructureSpacer
+from src.modules import Dialogs, InfoWindow
 from src.data import project
 from src.data import managers
 
@@ -287,54 +285,107 @@ class StructureSetListWidget(QtWidgets.QWidget):
 	class ItemWidget(QtWidgets.QWidget):
 		def __init__(self, setID: str):
 			super().__init__()
-			self.structure_setID = setID
+			self.setID = setID
+			self.layout = QtWidgets.QHBoxLayout(self)
 			self.text = QtWidgets.QLabel(setID)
 			self.text.setFixedWidth(200)
 
 			# Buttons
-			self.spacing_entry = QtWidgets.QDoubleSpinBox(decimals=0, suffix=" chunks", minimum=0, maximum=4096, value=managers.structure_sets.get_original_spacing(self.structure_setID))
-			self.separation_entry = QtWidgets.QDoubleSpinBox(decimals=0, suffix=" chunks", minimum=0, maximum=4096, value=managers.structure_sets.get_original_separation(self.structure_setID))
-			self.spacing_entry.valueChanged.connect(self.__spacing_changed__)
-			self.separation_entry.valueChanged.connect(self.__separation_changed__)
-			self.spacing_label = QtWidgets.QLabel("Spacing:")
-			self.spacing_label.setToolTip("Average distance between two structures.")
-			self.separation_label = QtWidgets.QLabel("Separation:")
-			self.separation_label.setToolTip("Minimum distance between two structures.")
-			self.spacing_layout = QtWidgets.QHBoxLayout()
-			self.spacing_layout.addWidget(self.spacing_label)
-			self.spacing_layout.addWidget(self.spacing_entry)
-			self.separation_layout = QtWidgets.QHBoxLayout()
-			self.separation_layout.addWidget(self.separation_label)
-			self.separation_layout.addWidget(self.separation_entry)
-			self.config_layout = QtWidgets.QVBoxLayout()
-			self.config_layout.addLayout(self.spacing_layout)
-			self.config_layout.addLayout(self.separation_layout)
-			self.reset_button = QtWidgets.QPushButton("Reset to original")
-			self.reset_button.setMaximumWidth(200)
-			self.reset_button.pressed.connect(self.reset_options)
-			self.config_layout.addWidget(self.reset_button)
+			config_layout = QtWidgets.QVBoxLayout()
+
+			self.entries = dict()
+			data = managers.structure_sets.get_placement_data(self.setID)
+			for key in data:
+
+				label = QtWidgets.QLabel()
+				label.setText(f"{key.capitalize()}:".replace("_", " "))
+				label.setStyleSheet("QLabel {text-decoration: underline}")
+
+				if isinstance(data[key], int):
+					self.entries[key] = QtWidgets.QDoubleSpinBox(
+						decimals=0,
+						minimum=0,
+						maximum=4096,
+						value=data[key]
+					)
+					self.entries[key].type = int
+					self.entries[key].valueChanged.connect(self._changed_)
+
+					if key == "spacing":
+						label.setToolTip("Average distance (in chunks) between two neighboring generation attempts. Value from 0 to 4096 (inclusive).")
+					elif key == "separation":
+						label.setToolTip("Minimum distance (in chunks) between two neighboring attempts. Value from 0 to 4096 (inclusive).")
+					elif key == "distance":
+						label.setToolTip("The thickness of a ring <i>plus</i> that of a gap between two rings. Value from 0 to 1023 (inclusive). <b>Unit is 6 chunks.</b>")
+						self.entries[key].setMaximum(1023)
+					elif key == "count":
+						label.setToolTip("The total number of generation attempts in a dimension. Value from 1 to 4095 (inclusive).")
+						self.entries[key].setMinimum(1)
+						self.entries[key].setMaximum(4095)
+					elif key == "spread":
+						label.setToolTip("How many attempts are on the ring closest to spawn. Value from 0 to 1023 (inclusive).")
+						self.entries[key].setMaximum(1023)
+					else:
+						label.setToolTip("Unknown key. Value range unknown.")
+
+				elif isinstance(data[key], float):
+					self.entries[key] = QtWidgets.QDoubleSpinBox(
+						decimals=4,
+						minimum=0,
+						maximum=1,
+						value=data[key],
+						singleStep=0.1
+					)
+					self.entries[key].type = float
+					self.entries[key].valueChanged.connect(self._changed_)
+
+					if key == "frequency":
+						label.setToolTip("Probability of generation if conditions are met.")
+					else:
+						label.setToolTip("Unknown key. Value range unknown.")
+
+				else:
+					print(key +"  " + str(type(data[key])))
+					self.entries[key] = QtWidgets.QLineEdit(text=str(data[key]))
+					self.entries[key].textChanged.connect(self._changed_)
+
+				self.entries[key].setMaximumWidth(200)
+
+				layout = QtWidgets.QHBoxLayout()
+				layout.addWidget(label)
+				layout.addWidget(self.entries[key])
+
+				config_layout.addLayout(layout)
+
+			# Button for resetting everything
+			reset_button = QtWidgets.QPushButton("Reset to original")
+			reset_button.setMaximumWidth(200)
+			reset_button.pressed.connect(self.reset_options)
+
+			config_layout.addWidget(reset_button)
 
 			# Layout time!!
-			self.layout = QtWidgets.QHBoxLayout(self)
 			self.layout.addWidget(self.text)
-			self.layout.addLayout(self.config_layout)
+			self.layout.addLayout(config_layout)
 
 		def reset_options(self):
-			managers.structure_sets.reset_spacing(self.structure_setID)
-			managers.structure_sets.reset_separation(self.structure_setID)
+			managers.structure_sets.reset_placement(self.setID)
+			for key in self.entries:
+				try:
+					self.entries[key].setValue(managers.structure_sets.get_original_placement_data(self.setID)[key])
+				except AttributeError:
+					self.entries[key].setText(managers.structure_sets.get_original_placement_data(self.setID)[key])
+				self.entries[key].update()
 
-		def __spacing_changed__(self, n: float):
-			print(n)
-			if n == managers.structure_sets.get_original_spacing(self.structure_setID):
-				managers.structure_sets.reset_spacing(self.structure_setID)
-			else:
-				managers.structure_sets.set_spacing(self.structure_setID, n)
-
-		def __separation_changed__(self, n: float):
-			if n == managers.structure_sets.get_original_separation(self.structure_setID):
-				managers.structure_sets.reset_separation(self.structure_setID)
-			else:
-				managers.structure_sets.set_separation(self.structure_setID, n)
+		def _changed_(self):
+			for key in self.entries:
+				try:
+					if self.entries[key].type == int:
+						managers.structure_sets.set_placement(self.setID, key, int(self.entries[key].value()))
+					else:
+						managers.structure_sets.set_placement(self.setID, key, self.entries[key].value())
+				except AttributeError:
+					managers.structure_sets.set_placement(self.setID, key, self.entries[key].text())
 
 
 class App(QtWidgets.QApplication):

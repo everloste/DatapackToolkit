@@ -215,6 +215,7 @@ class DatapackManager:
 		name: str = ""
 		files_to_disable = list()
 		files_to_enable = list()
+		files_to_rewrite = dict()
 
 		def __post_init__(self):
 			self.name = self.path.split("/")[-1]
@@ -226,24 +227,28 @@ class DatapackManager:
 		def enable_files(self, files: list | tuple):
 			[self.files_to_enable.append(file) for file in files]
 
-		def modify_file(self, path: str, new_content: str):
-			pass
+		def rewrite_file(self, path: str, new_content: str):
+			self.files_to_rewrite[path] = new_content
 
 		def apply(self, compress: bool = True, level: int = 5):
 			temp_path = f"{self.path}.temp"
 
 			compression = ZIP_DEFLATED if compress == True else ZIP_STORED
-			with zipfile.ZipFile(temp_path, "w", compression=compression, compresslevel=level) as zout:
+			with zipfile.ZipFile(temp_path, "w", compression=compression, compresslevel=level) as final:
 				for item in self.archive.infolist():
-					original_data = self.archive.read(item.filename)
+					data = self.archive.read(item.filename)
 					new_name = item.filename
 
 					for rule in self.files_to_disable:
-						if rule in item.filename:
+						if item.filename.endswith(rule):
 							new_name = f"{item.filename}.disabled"
 
 					for rule in self.files_to_enable:
-						if f"{rule}.disabled" in item.filename:
+						if item.filename.endswith(f"{rule}.disabled"):
 							new_name = item.filename.removesuffix(".disabled")
 
-					zout.writestr(new_name, original_data)
+					for rule in self.files_to_rewrite:
+						if item.filename.endswith(rule):
+							data = self.files_to_rewrite[rule]
+
+					final.writestr(new_name, data)

@@ -39,7 +39,7 @@ class BiomeBlender:
 			self.biomes_in_pack[pack] = set() # Might as well reset this
 			paths = archive.namelist();  archive.close()
 			for path in paths:
-				if (path[-5:] == ".json") and ("/worldgen/biome/" in path) and ("/tags/" not in path):
+				if path.endswith(".json") and ("/worldgen/biome/" in path) and ("/tags/" not in path):
 					biome = biome_id_from_path(path)
 					biomes.add(biome)
 					self.biomes_in_pack[pack].add(biome)
