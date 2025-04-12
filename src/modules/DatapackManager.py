@@ -3,7 +3,7 @@ import zipfile, json, os, shutil
 from typing import Type
 from zipfile import ZipFile, ZIP_DEFLATED, ZIP_STORED
 from src.data.project import META
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 class DatapackManager:
@@ -213,16 +213,15 @@ class DatapackManager:
 		path: str
 		archive: zipfile.ZipFile
 		name: str = ""
-		files_to_disable = list()
-		files_to_enable = list()
-		files_to_rewrite = dict()
+		files_to_disable: list = field(default_factory=list)
+		files_to_enable: list = field(default_factory=list)
+		files_to_rewrite: dict = field(default_factory=dict)
 
 		def __post_init__(self):
 			self.name = self.path.split("/")[-1]
 
 		def disable_files(self, files: list | tuple):
 			[self.files_to_disable.append(file) for file in files]
-			print(files)
 
 		def enable_files(self, files: list | tuple):
 			[self.files_to_enable.append(file) for file in files]

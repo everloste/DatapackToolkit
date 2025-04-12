@@ -7,13 +7,15 @@ from src.modules.DatapackManager import DatapackManager
 
 
 class StructureSpacer:
-	relevant_packs = set()
-	structure_set_objects = dict()
-	list_of_structure_sets = list()
+	relevant_packs: set
+	structure_set_objects: dict
+	list_of_structure_sets: list
 
 	def __init__(self, dpmanager):
 		self.manager = dpmanager
 		self.manager.add_child_manager(self)
+
+		self.relevant_packs = set(); self.structure_set_objects = dict(); self.list_of_structure_sets = list()
 
 		self.__update__()
 
@@ -54,8 +56,8 @@ class StructureSpacer:
 		modified: bool = False
 		source_json: dict
 		type: str = "minecraft:random_spread"
-		placement_data = dict()
-		original_placement_data = dict()
+		placement_data: dict
+		original_placement_data: dict
 
 		def __init__(self, setID: str, source_json: dict = None):
 			self.setID = setID

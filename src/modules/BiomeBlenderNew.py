@@ -9,14 +9,16 @@ def biome_id_from_path(path: str) -> str:
 
 
 class BiomeBlender:
-	relevant_packs = list()
-	biome_list = list()
-	biomes_in_pack = dict()
-	biome_objects = dict()
+	relevant_packs: list
+	biome_list: list
+	biomes_in_pack: dict
+	biome_objects: dict
 
 	def __init__(self, dpmanager):
 		self.manager = dpmanager
 		self.manager.add_child_manager(self)
+
+		self.relevant_packs = list(); self.biome_list = list(); self.biomes_in_pack = dict(); self.biome_objects = dict()
 
 		self.__update__()
 
