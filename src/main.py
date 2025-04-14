@@ -48,8 +48,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			info = Dialogs.ExportDetailsDialog().exec()
 
 			if info != 0:
-				export_directory = QtWidgets.QFileDialog.getExistingDirectory()
-				result = managers.datapacks.export_packs(export_directory, compress=info[0], level=info[1])
+				result = managers.datapacks.export_packs(info[0], compress=info[1], level=info[2])
 
 				if result is not None:
 					msgBox = QtWidgets.QMessageBox()
@@ -93,6 +92,7 @@ class MainWidget(QtWidgets.QWidget):
 		self.workspace.addTab(self.biome_list_scroll_area, "Biome providers")
 		self.workspace.addTab(self.sset_scroll, "Structure sets")
 		self.layout.addWidget(self.workspace)
+		
 
 
 class DatapackListWidget(QtWidgets.QListWidget):
