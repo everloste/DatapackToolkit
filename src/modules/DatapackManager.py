@@ -103,6 +103,7 @@ class DatapackManager:
 			string = str()
 			for entry in description:
 				line = str()
+
 				if "color" in entry:
 					color = entry["color"]
 					line += f'''<font style='color:{color};'>'''
@@ -110,7 +111,16 @@ class DatapackManager:
 					line += "</font>"
 				else:
 					line = entry["text"]
+
+				if "bold" in entry and entry["bold"]:
+					line = f"<b>{line}</b>"
+				if "italic" in entry and entry["italic"]:
+					line = f"<i>{line}</i>"
+				if "underlined" in entry and entry["underlined"]:
+					line = f"<u>{line}</u>"
+
 				line = line.replace("\n", "<br>")
+
 				string += line
 
 			description = string

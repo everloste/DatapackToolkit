@@ -3,6 +3,7 @@ from PySide6 import QtCore, QtWidgets, QtGui
 from src.modules import Dialogs, InfoWindow
 from src.data import project
 from src.data import managers
+from src.modules.gui import iconprovider as ICONS
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -17,7 +18,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		export_action = file_menu.addAction("Export")
 		export_action.triggered.connect(self.export_datapacks)
 
-		about_menu = self.menu.addMenu("About")
+		about_menu = self.menu.addMenu("Info")
 		about_action = about_menu.addAction("About Datapack Toolkit")
 		about_action.triggered.connect(self.show_about_window)
 
@@ -30,10 +31,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
 	@QtCore.Slot()
 	def import_datapacks(self):
-		file = QtWidgets.QFileDialog.getOpenFileName(self, "Select datapack", "", "Datapack files (*.zip *.jar)")
-		location = file[0]
+		files = QtWidgets.QFileDialog.getOpenFileNames(self, "Select datapacks", "", "Datapacks (*.zip *.jar)")
 
-		managers.datapacks.load_pack(location)
+		for location in files[0]:
+			managers.datapacks.load_pack(location)
 
 		# Legacy BiomeBlender code (to be removed later)
 		#self.biome_manager.add_pack(location)
@@ -92,7 +93,7 @@ class MainWidget(QtWidgets.QWidget):
 		self.workspace.addTab(self.biome_list_scroll_area, "Biome providers")
 		self.workspace.addTab(self.sset_scroll, "Structure sets")
 		self.layout.addWidget(self.workspace)
-		
+
 
 
 class DatapackListWidget(QtWidgets.QListWidget):
@@ -140,7 +141,7 @@ class DatapackListWidget(QtWidgets.QListWidget):
 			self.master = master
 
 			# Widget styling
-			self.setStyleSheet("DatapackItemWidget {border: 2px solid #808080; border-radius: 10px}")
+			self.setStyleSheet("DatapackItemWidget {border: 1px solid #808080; border-radius: 5px}")
 			self.setFrameShape(QtWidgets.QFrame.Shape.Box)
 			self.setLineWidth(1)
 			self.setMinimumHeight(50)
@@ -150,6 +151,8 @@ class DatapackListWidget(QtWidgets.QListWidget):
 			self.id_label = QtWidgets.QLabel(f"<h3>{self.packID}</h3>", alignment=QtCore.Qt.AlignmentFlag.AlignCenter); self.id_label.setMaximumHeight(75); self.id_label.setWordWrap(True)
 			self.removal_button = QtWidgets.QPushButton(); self.removal_button.setText("Remove"); self.removal_button.clicked.connect(self._remove_)
 			self.move_up_button = QtWidgets.QPushButton(); self.move_up_button.setText("Move up"); self.move_up_button.clicked.connect(self._move_up_)
+			self.removal_button.setIcon(ICONS.Provider.get("delete"))
+			self.move_up_button.setIcon(ICONS.Provider.get("up"))
 
 			# Pack icon code
 			img = QtGui.QPixmap()
@@ -222,7 +225,8 @@ class BiomeListWidget(QtWidgets.QWidget):
 			self.biomeID    = biome
 
 			# Biome label time!!!!!!
-			self.text = QtWidgets.QLabel(self.biomeID)
+			human_text = self.biomeID.split(":")[1].replace("_", " ").title()
+			self.text = QtWidgets.QLabel(f"<b>{human_text}</b><br><i>{self.biomeID}</i>")
 			self.text.setFixedWidth(200)
 			self.text.setMaximumHeight(75)
 			self.text.setWordWrap(True)
@@ -399,6 +403,8 @@ class App(QtWidgets.QApplication):
 		icon = QtGui.QPixmap()
 		icon.load(f"assets/icon.png")
 		self.setWindowIcon(icon)
+
+		ICONS.Provider.set_app(self)
 
 
 if __name__ == "__main__":
