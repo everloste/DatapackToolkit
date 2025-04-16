@@ -59,4 +59,4 @@ class AboutWidget(QtWidgets.QDialog):
 
 		self.setLayout(self.layout)
 
-		self.setFixedHeight(250)
+		#self.setFixedHeight(250)
