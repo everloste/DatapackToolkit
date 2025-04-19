@@ -131,6 +131,10 @@ class TkConfigScreenItemTemplate(QtWidgets.QWidget):
 		self.data = data
 		self.config = config
 		self.entryWidth = 200
+		self.textWidth = 300
+
+		self.setMinimumWidth(550)
+
 		self.__build__()
 
 	def __build__(self):
@@ -212,7 +216,11 @@ class TkConfigScreenSpinbox(TkConfigScreenItemTemplate):
 
 		text = self.data["text"]
 		label = QtWidgets.QLabel(text)
+		label.setFixedWidth(self.textWidth)
+		label.setWordWrap(True)
 		self.layout.addWidget(label)
+		self.layout.addItem(
+			QtWidgets.QSpacerItem(2, 0, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum))
 
 		# Value edit box
 		spinnybox = QtWidgets.QSpinBox() if self.data["value"]["type"] != "float" else QtWidgets.QDoubleSpinBox()
@@ -253,7 +261,7 @@ class TkConfigScreenSpinbox(TkConfigScreenItemTemplate):
 
 		# Finalise
 		spinnybox.valueChanged.connect(self._changed)
-		spinnybox.setMaximumWidth(self.entryWidth)
+		spinnybox.setFixedWidth(self.entryWidth)
 		self.layout.addWidget(spinnybox)
 
 		self.setLayout(self.layout)
@@ -271,6 +279,9 @@ class TkConfigScreenSlider(TkConfigScreenItemTemplate):
 		# The description
 		descText = self.data["text"]
 		self.desc = QtWidgets.QLabel(descText)
+		self.desc.setFixedWidth(self.textWidth)
+		self.desc.setWordWrap(True)
+
 		self.layout.addWidget(self.desc)
 
 		# The slider
@@ -302,12 +313,13 @@ class TkConfigScreenSlider(TkConfigScreenItemTemplate):
 		else:
 			self.mrSlidey.setValue(self.mrSlidey.minimum())
 
-		self.mrSlidey.setMaximumWidth(self.entryWidth)
+		self.mrSlidey.setFixedWidth(self.entryWidth-40)
 		self.mrSlidey.valueChanged.connect(self._changed)
 
 		# The label for the slider value
 		self.valueLabelSuffix = "%" if self.data["value"]["type"] == "percent" else ""
 		self.valueLabel = QtWidgets.QLabel(f"{self.mrSlidey.value()}{self.valueLabelSuffix}")
+		self.valueLabel.setFixedWidth(35)
 
 		# We're adding the value label first
 		self.layout.addItem(QtWidgets.QSpacerItem(2, 0, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum))
@@ -328,8 +340,12 @@ class TkConfigScreenSwitch(TkConfigScreenItemTemplate):
 		# Build the description
 		descText = self.data["text"]
 		self.desc = QtWidgets.QLabel(descText)
+		self.desc.setFixedWidth(self.textWidth)
+		self.desc.setWordWrap(True)
 
 		self.layout.addWidget(self.desc)
+		self.layout.addItem(
+			QtWidgets.QSpacerItem(2, 0, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum))
 
 		# Build the switch
 		if "default" in self.data: self.defaultButtonState = self.data["default"]
@@ -337,7 +353,7 @@ class TkConfigScreenSwitch(TkConfigScreenItemTemplate):
 		self.buttonState = self.defaultButtonState
 		self.button = QtWidgets.QPushButton()
 		self.button.clicked.connect(self._changed)
-		self.button.setMaximumWidth(self.entryWidth)
+		self.button.setFixedWidth(self.entryWidth)
 		if self.buttonState:
 			self.button.setText("Enabled (ON)")
 		else:

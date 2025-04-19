@@ -38,7 +38,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.setCentralWidget(MainWindowWidget())
 		self.menubar = None
 		self.createMenuBar()
-		self.resize(800, 600)
+		self.resize(950, 600)
 
 	def createMenuBar(self):
 		self.menubar = self.menuBar()
@@ -50,7 +50,7 @@ class MainWindow(QtWidgets.QMainWindow):
 		a2.triggered.connect(self.exportDatapacks)
 
 		about_menu = self.menubar.addMenu("About")
-		b2 = about_menu.addAction("Show current log file")
+		b2 = about_menu.addAction("Open current log")
 		b2.triggered.connect(self.showLog)
 		b1 = about_menu.addAction("About Datapack Toolkit")
 		b1.triggered.connect(self.showInfoWindow)
