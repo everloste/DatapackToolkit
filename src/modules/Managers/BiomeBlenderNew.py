@@ -1,5 +1,6 @@
+from src.modules.Managers.DatapackManager import DatapackManager
+
 from dataclasses import dataclass
-from src.modules.DatapackManager import DatapackManager
 
 def biome_id_from_path(path: str) -> str:
 	split_path = path.split("/")

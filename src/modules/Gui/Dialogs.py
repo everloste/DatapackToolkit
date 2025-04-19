@@ -3,7 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6 import QtWidgets as qtw
 from pathlib import Path
 
-class ConfirmExportDialog(qtw.QDialog):
+class ExportConfirmationDialog(qtw.QDialog):
 	def __init__(self):
 		super().__init__()
 

@@ -2,7 +2,7 @@
 from PySide6 import QtWidgets, QtCore, QtGui
 from src.data import project
 
-class AboutWidget(QtWidgets.QDialog):
+class InfoWindow(QtWidgets.QDialog):
 	def __init__(self):
 		super().__init__()
 		self.setWindowTitle("About Datapack Toolkit")

@@ -3,7 +3,7 @@
 #from src.data.project import META
 import json
 
-from src.modules.DatapackManager import DatapackManager
+from src.modules.Managers.DatapackManager import DatapackManager
 
 
 class StructureSpacer:

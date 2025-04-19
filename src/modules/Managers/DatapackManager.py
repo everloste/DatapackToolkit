@@ -4,6 +4,7 @@ from typing import Type
 from zipfile import ZipFile, ZIP_DEFLATED, ZIP_STORED
 from src.data.project import META
 from dataclasses import dataclass, field
+from src.enums import WidgetUpdateReason
 
 
 class DatapackManager:
@@ -15,12 +16,12 @@ class DatapackManager:
 	def __init__(self):
 		pass
 
-	def __update_children__(self):
+	def __update_children__(self, reason):
 		for child in self.children_managers:
 			child.__update__()
 		for child in self.children_widgets:
-			print(f"Updating {child}")
-			child.__redraw__()
+			#print(f"Updating {child}")
+			child.__redraw__(reason)
 
 	def load_pack(self, path: str) -> str:
 		archive = zipfile.ZipFile(path, 'r')
@@ -41,6 +42,7 @@ class DatapackManager:
 				"description":  "A Minecraft datapack",
 				"modules":      set(),
 				"icon":         bytes(),
+				"config":       None
 			}
 
 			# Make sure we can't load the same pack twice
@@ -56,18 +58,21 @@ class DatapackManager:
 			# Detect modules:
 			# Modules are things that the datapack modifies - biomes, structures, etc. - list only things that are relevant for this program
 			files = archive.namelist(); modules = set()
+
 			for file in files:
 				if "/structure_set/" in file:
 					modules.add("structure_set")
 				elif "/worldgen/biome/" in file:
 					modules.add("biome")
-				elif "/template_pool/" in file:
-					modules.add("template_pool")
-				elif "/loot_table/" in file:
-					modules.add("loot_table")
 				elif "minecraft/dimension/overworld.json" in file:
 					modules.add("dimension/overworld")
+				elif "dpconfig.json" in file:
+					modules.add("dpconfig")
+
 			data["modules"] = set(modules)
+
+			if "dpconfig" in data["modules"]:
+				data["config"] = json.loads(archive.read("dpconfig.json"))
 
 			# Close archive and finalise
 			archive.close()
@@ -76,7 +81,7 @@ class DatapackManager:
 			self.update_pack_data(data["id"])
 			self.pack_order.append(data["id"])
 
-			self.__update_children__()
+			self.__update_children__(WidgetUpdateReason.DatapackAddition)
 
 			return data["id"]
 
@@ -131,7 +136,7 @@ class DatapackManager:
 			self.pack_order.remove(dpack)
 			del self.datapacks[dpack]
 
-			self.__update_children__()
+			self.__update_children__(WidgetUpdateReason.DatapackRemoval)
 			return dpack
 
 		except ValueError:
@@ -143,7 +148,7 @@ class DatapackManager:
 		if i >= 1:
 			self.pack_order.remove(dpack)
 			self.pack_order.insert(i-1, dpack)
-		self.__update_children__()
+		self.__update_children__(WidgetUpdateReason.DatapackOrderChange)
 		return self.pack_order
 
 	########## Getters ##########
@@ -159,6 +164,9 @@ class DatapackManager:
 
 	def get_pack_modules(self, dpack: str) -> set:
 		return self.datapacks[dpack]["modules"]
+
+	def get_pack_config(self, dpack: str) -> dict:
+		return self.datapacks[dpack]["config"]
 
 	def get_pack_list(self) -> list:
 		return self.pack_order

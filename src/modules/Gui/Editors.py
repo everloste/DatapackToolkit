@@ -1,144 +1,58 @@
-import sys
 from PySide6 import QtCore, QtWidgets, QtGui
-from src.modules import Dialogs, InfoWindow
-from src.data import project
-from src.data import managers
-from src.modules.gui import iconprovider as ICONS
+from src.modules.Data import DataHandler
+from src.modules.Gui import Icons as ICONS
 
 
-class MainWindow(QtWidgets.QMainWindow):
-	def __init__(self, master):
-		super().__init__()
-		self.master     = master
-		self.menu       = self.menuBar()
-
-		file_menu = self.menu.addMenu("Datapack")
-		import_action = file_menu.addAction("Open")
-		import_action.triggered.connect(self.import_datapacks)
-		export_action = file_menu.addAction("Export")
-		export_action.triggered.connect(self.export_datapacks)
-
-		about_menu = self.menu.addMenu("Info")
-		about_action = about_menu.addAction("About Datapack Toolkit")
-		about_action.triggered.connect(self.show_about_window)
-
-		self.widget = MainWidget()
-		self.setCentralWidget(self.widget)
-		#self.biome_manager = self.widget.biome_manager
-
-		self.resize(800, 600)
-
-
-	@QtCore.Slot()
-	def import_datapacks(self):
-		files = QtWidgets.QFileDialog.getOpenFileNames(self, "Select datapacks", "", "Datapacks (*.zip *.jar)")
-
-		for location in files[0]:
-			managers.datapacks.load_pack(location)
-
-		# Legacy BiomeBlender code (to be removed later)
-		#self.biome_manager.add_pack(location)
-		#self.widget.biome_list_widget.__redraw__()
-		self.widget.biome_list_scroll_area.update()
-
-	@QtCore.Slot()
-	def export_datapacks(self):
-		dlg = Dialogs.ConfirmExportDialog()
-		if dlg.exec():
-
-			info = Dialogs.ExportDetailsDialog().exec()
-
-			if info != 0:
-				result = managers.datapacks.export_packs(info[0], compress=info[1], level=info[2])
-
-				if result is not None:
-					msgBox = QtWidgets.QMessageBox()
-					msgBox.setText("Success :3")
-					msgBox.exec()
-
-
-	@QtCore.Slot()
-	def show_about_window(self):
-		new_window = InfoWindow.AboutWidget()
-		new_window.exec()
-
-
-class MainWidget(QtWidgets.QWidget):
-	def __init__(self):
-		super().__init__()
-
-		#self.biome_manager = biomeblender.BiomeBlender([])
-
-		self.datapack_list_widget = DatapackListWidget()
-		self.biome_list_widget = BiomeListWidget()
-
-		self.workspace = QtWidgets.QTabWidget()
-
-		self.structure_list_widget = StructureSetListWidget()
-
-
-		# Layout time!!!!!!!!!!
-		self.layout = QtWidgets.QHBoxLayout(self)
-		self.layout.addWidget(self.datapack_list_widget)
-		self.biome_list_scroll_area = QtWidgets.QScrollArea()
-		self.biome_list_scroll_area.setWidget(self.biome_list_widget)
-		self.biome_list_scroll_area.setWidgetResizable(True)
-		#self.layout.addWidget(self.biome_list_scroll_area)
-
-		self.sset_scroll = QtWidgets.QScrollArea()
-		self.sset_scroll.setWidget(self.structure_list_widget)
-		self.sset_scroll.setWidgetResizable(True)
-
-
-		self.workspace.addTab(self.biome_list_scroll_area, "Biome providers")
-		self.workspace.addTab(self.sset_scroll, "Structure sets")
-		self.layout.addWidget(self.workspace)
-
-
-
-class DatapackListWidget(QtWidgets.QListWidget):
+class DatapackListWidget(QtWidgets.QScrollArea):
 
 	def __init__(self):
 		super().__init__()
-		#self.master         = master
-		#self.controller     = controller
-		self.entries        = list()
-		self.layout         = QtWidgets.QVBoxLayout(self)
+		self.entries = dict()
+		self.order = list()
 
-		self.layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+		self.cool_widget = QtWidgets.QWidget()
+		self.cool_layout = QtWidgets.QVBoxLayout(self)
+		self.cool_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+		self.cool_widget.setLayout(self.cool_layout)
 
+		self.setWidget(self.cool_widget)
+		self.setWidgetResizable(True)
 		self.setFixedWidth(300)
 
-		managers.datapacks.add_child_widget(self)
-		self.__redraw__()
+		self.dh = DataHandler()
 
+		self.dh.dataPacks.add_child_widget(self)
+		self.__redraw__(None)
 
-	def __redraw__(self):
-		if hasattr(self, 'entries'):
-			for entry in self.entries:
-				self.layout.removeWidget(entry)
-				entry.deleteLater()
+	def __redraw__(self, reason):
+		self.order = self.dh.dataPacks.get_pack_list()
 
-		self.entries.clear()
+		remove = set()
+		for pack in self.entries:
+			self.cool_layout.removeWidget(self.entries[pack])
+			if pack not in self.order:
+				self.entries[pack].deleteLater()
+				remove.add(pack)
+		for pack in remove:
+			del self.entries[pack]
 
-		for pack in managers.datapacks.get_pack_list():
-			entry = self.DatapackItemWidget(self, pack)
-			self.entries.append(entry)
-			self.layout.addWidget(entry)
+		for pack in self.order:
+			if pack in self.entries:
+				self.cool_layout.addWidget(self.entries[pack])
+			else:
+				self.entries[pack] = self.DatapackItemWidget(pack)
+				self.cool_layout.addWidget(self.entries[pack])
 
 
 	class DatapackItemWidget(QtWidgets.QFrame):
 
-		def __init__(self, master, pack_id):
+		def __init__(self, pack_id):
 			super().__init__()
 
 			# Init normal
 			self.packID = pack_id
 			self.layout = QtWidgets.QVBoxLayout(self)
-			manager = managers.datapacks
-
-			# Init legacy (to be removed)
-			self.master = master
+			self.dh = DataHandler()
 
 			# Widget styling
 			self.setStyleSheet("DatapackItemWidget {border: 1px solid #808080; border-radius: 5px}")
@@ -156,12 +70,12 @@ class DatapackListWidget(QtWidgets.QListWidget):
 
 			# Pack icon code
 			img = QtGui.QPixmap()
-			img.loadFromData(managers.datapacks.get_pack_icon(self.packID))
+			img.loadFromData(self.dh.dataPacks.get_pack_icon(self.packID))
 			img = img.scaledToWidth(75)
 			self.icon = QtWidgets.QLabel(); self.icon.setPixmap(img)
 
 			# Description code
-			desc = manager.get_pack_description(self.packID)
+			desc = self.dh.dataPacks.get_pack_description(self.packID)
 			self.desc = QtWidgets.QLabel(desc)
 
 			# Layout time!!!!!!!!!
@@ -181,12 +95,11 @@ class DatapackListWidget(QtWidgets.QListWidget):
 			self.layout.addLayout(self.layout_for_description)
 			self.layout.addLayout(self.layout_for_buttons)
 
-
 		def _move_up_(self):
-			managers.datapacks.move_up(self.packID)
+			self.dh.dataPacks.move_up(self.packID)
 
 		def _remove_(self):
-			managers.datapacks.remove_pack(self.packID)
+			self.dh.dataPacks.remove_pack(self.packID)
 
 
 class BiomeListWidget(QtWidgets.QWidget):
@@ -196,13 +109,13 @@ class BiomeListWidget(QtWidgets.QWidget):
 		#self.controller     = controller
 		self.entries        = list()
 		self.layout         = QtWidgets.QVBoxLayout(self)
+		self.backend = DataHandler()
 
-		managers.datapacks.add_child_widget(self)
-		self.__redraw__()
+		self.backend.dataPacks.add_child_widget(self)
+		self.__redraw__(None)
 
-
-	def __redraw__(self):
-		print("Updating biome list widget...")
+	def __redraw__(self, reason):
+		#print("Updating biome list widget...")
 
 		for entry in self.entries:
 			self.layout.removeWidget(entry)
@@ -210,19 +123,19 @@ class BiomeListWidget(QtWidgets.QWidget):
 
 		self.entries.clear()
 
-		for biome in managers.biomes.biome_list:
-			entry = self.ItemWidget(biome)
+		for biome in self.backend.biomeProviders.biome_list:
+			entry = self.ItemWidget(biome, self.backend)
 			self.entries.append(entry)
 			self.layout.addWidget(entry)
 
 		self.update()
 
-
 	class ItemWidget(QtWidgets.QWidget):
 
-		def __init__(self, biome: str):
+		def __init__(self, biome: str, backend):
 			super().__init__()
 			self.biomeID    = biome
+			self.dh = backend
 
 			# Biome label time!!!!!!
 			human_text = self.biomeID.split(":")[1].replace("_", " ").title()
@@ -234,15 +147,15 @@ class BiomeListWidget(QtWidgets.QWidget):
 			# Dropdown button for options!!!!!!!
 			self.options_button = QtWidgets.QComboBox()
 			self.options_button.setFixedWidth(200)
-			self.options_button.addItems(managers.biomes.get_packs_with_biome(self.biomeID))
+			self.options_button.addItems(self.dh.biomeProviders.get_packs_with_biome(self.biomeID))
 			if "minecraft:" in self.biomeID:
 				self.options_button.addItem("Vanilla")
 
-			if managers.biomes.get_biome_changed(self.biomeID):
-				if managers.biomes.get_biome_preference(self.biomeID) is None:
+			if self.dh.biomeProviders.get_biome_changed(self.biomeID):
+				if self.dh.biomeProviders.get_biome_preference(self.biomeID) is None:
 					self.options_button.setCurrentText("Vanilla")
 				else:
-					self.options_button.setCurrentText(managers.biomes.get_biome_preference(self.biomeID))
+					self.options_button.setCurrentText(self.dh.biomeProviders.get_biome_preference(self.biomeID))
 
 			self.options_button.currentTextChanged.connect(self._activated_event_)
 
@@ -255,9 +168,9 @@ class BiomeListWidget(QtWidgets.QWidget):
 		@QtCore.Slot()
 		def _activated_event_(self, selection: str):
 			if selection.lower() != "vanilla":
-				managers.biomes.set_biome_preference(self.biomeID, selection)
+				self.dh.biomeProviders.set_biome_preference(self.biomeID, selection)
 			else:
-				managers.biomes.set_biome_preference(self.biomeID, None)
+				self.dh.biomeProviders.set_biome_preference(self.biomeID, None)
 
 
 class StructureSetListWidget(QtWidgets.QWidget):
@@ -265,40 +178,42 @@ class StructureSetListWidget(QtWidgets.QWidget):
 		super().__init__()
 		self.entries        = list()
 		self.layout         = QtWidgets.QVBoxLayout(self)
-		self.manager        = managers.structure_sets
+		#self.manager        = managers.structure_sets
+		self.dh = DataHandler()
 
 		self.layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
-		managers.datapacks.add_child_widget(self)
-		self.__redraw__()
+		self.dh.dataPacks.add_child_widget(self)
+		self.__redraw__(None)
 
-	def __redraw__(self):
+	def __redraw__(self, reason):
 		for entry in self.entries:
 			self.layout.removeWidget(entry)
 			entry.deleteLater()
 
 		self.entries.clear()
 
-		for structure_set in self.manager.get_structure_set_list():
-			entry = self.ItemWidget(structure_set)
+		for structure_set in self.dh.structureSets.get_structure_set_list():
+			entry = self.ItemWidget(structure_set, self.dh)
 			self.entries.append(entry)
 			self.layout.addWidget(entry)
 
 		self.update()
 
 	class ItemWidget(QtWidgets.QWidget):
-		def __init__(self, setID: str):
+		def __init__(self, setID: str, backend: DataHandler):
 			super().__init__()
 			self.setID = setID
 			self.layout = QtWidgets.QHBoxLayout(self)
 			self.text = QtWidgets.QLabel(setID)
 			self.text.setFixedWidth(200)
+			self.dh = backend
 
 			# Buttons
 			config_layout = QtWidgets.QVBoxLayout()
 
 			self.entries = dict()
-			data = managers.structure_sets.get_placement_data(self.setID)
+			data = self.dh.structureSets.get_placement_data(self.setID)
 			for key in data:
 
 				label = QtWidgets.QLabel()
@@ -349,7 +264,7 @@ class StructureSetListWidget(QtWidgets.QWidget):
 						label.setToolTip("Unknown key. Value range unknown.")
 
 				else:
-					print(key +"  " + str(type(data[key])))
+					#print(key +"  " + str(type(data[key])))
 					self.entries[key] = QtWidgets.QLineEdit(text=str(data[key]))
 					self.entries[key].textChanged.connect(self._changed_)
 
@@ -373,44 +288,20 @@ class StructureSetListWidget(QtWidgets.QWidget):
 			self.layout.addLayout(config_layout)
 
 		def reset_options(self):
-			managers.structure_sets.reset_placement(self.setID)
+			self.dh.structureSets.reset_placement(self.setID)
 			for key in self.entries:
 				try:
-					self.entries[key].setValue(managers.structure_sets.get_original_placement_data(self.setID)[key])
+					self.entries[key].setValue(self.dh.structureSets.get_original_placement_data(self.setID)[key])
 				except AttributeError:
-					self.entries[key].setText(managers.structure_sets.get_original_placement_data(self.setID)[key])
+					self.entries[key].setText(self.dh.structureSets.get_original_placement_data(self.setID)[key])
 				self.entries[key].update()
 
 		def _changed_(self):
 			for key in self.entries:
 				try:
 					if self.entries[key].type == int:
-						managers.structure_sets.set_placement(self.setID, key, int(self.entries[key].value()))
+						self.dh.structureSets.set_placement(self.setID, key, int(self.entries[key].value()))
 					else:
-						managers.structure_sets.set_placement(self.setID, key, self.entries[key].value())
+						self.dh.structureSets.set_placement(self.setID, key, self.entries[key].value())
 				except AttributeError:
-					managers.structure_sets.set_placement(self.setID, key, self.entries[key].text())
-
-
-class App(QtWidgets.QApplication):
-	def __init__(self):
-		self.setStyle(project.META.default_theme)
-		self.setDesktopSettingsAware(True)
-		super().__init__()
-		self.setStyleSheet("QTabBar::tab:selected {font-weight: bold}")
-		self.setApplicationName(project.META.app_name)
-
-		icon = QtGui.QPixmap()
-		icon.load(f"assets/icon.png")
-		self.setWindowIcon(icon)
-
-		ICONS.Provider.set_app(self)
-
-
-if __name__ == "__main__":
-	app = App()
-
-	window = MainWindow(app)
-	window.show()
-
-	sys.exit(app.exec())
+					self.dh.structureSets.set_placement(self.setID, key, self.entries[key].text())
