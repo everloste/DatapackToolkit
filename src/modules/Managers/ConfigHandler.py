@@ -2,22 +2,6 @@ from src.modules.Managers.DatapackManager import DatapackManager
 import src.modules.Log as Log
 import json, math
 
-
-class ValueType:
-	class Int:
-		pass
-	class Float:
-		pass
-	class Percent:
-		pass
-
-class OptionType:
-	class Title:
-		pass
-	class ValueEdit:
-		pass
-
-
 class CustomConfigManager:
 
 	def __init__(self, dpmanager):
@@ -199,24 +183,26 @@ class CustomConfigManager:
 
 
 class Config:
+	datapackID: str
+
 	def __init__(self, datapackID: str, file: str | dict):
 		self.datapackID = datapackID
-
-		self.JSON = dict()
+		self.jsonObject = dict()
+		
 		if isinstance(file, dict):
-			self.JSON = file.copy()
+			self.jsonObject = file.copy()
 		elif isinstance(file, str):
-			self.JSON = json.loads(file)
+			self.jsonObject = json.loads(file)
 
-		self.tabName = self.JSON["config"]["meta"]["tab"]
+		self.tabName = self.jsonObject["config"]["meta"]["tab"]
 
 		self.widgets = list()
-		for entry in self.JSON["config"]["widgets"]:
+		for entry in self.jsonObject["config"]["widgets"]:
 			self.widgets.append(entry)
 
 		self.methods = dict()
-		for entry in self.JSON["config"]["methods"]:
-			self.methods[entry] = ConfigMethod(self.JSON["config"]["methods"][entry])
+		for entry in self.jsonObject["config"]["methods"]:
+			self.methods[entry] = ConfigMethod(self.jsonObject["config"]["methods"][entry])
 
 	def getWidgets(self) -> list[dict]:
 		return self.widgets
@@ -226,16 +212,17 @@ class Config:
 
 
 class ConfigMethod:
-	input: None
+	input = None
+
 	def __init__(self, data: dict):
-		self.STRUCT = data
+		self.jsonObject = data
 		self.input = None
 
-		if "accessors" in self.STRUCT:
-			self.accessors = self.STRUCT["accessors"]
+		if "accessors" in self.jsonObject:
+			self.accessors = self.jsonObject["accessors"]
 
-		if "transformer" in self.STRUCT:
-			self.transformer = self.STRUCT["transformer"]
+		if "transformer" in self.jsonObject:
+			self.transformer = self.jsonObject["transformer"]
 
 	def readTransformerArgument(self, argument: str | dict | int | float):
 		if isinstance(argument, str):

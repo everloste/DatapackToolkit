@@ -2,7 +2,7 @@ import zipfile
 
 from PySide6 import QtWidgets, QtGui
 from PySide6.QtCore import Qt
-from src.modules.Managers.DPConfigHandler import Config
+from src.modules.Managers.ConfigHandler import Config
 from src.modules.Data import DataHandler
 
 
@@ -158,7 +158,6 @@ class TkConfigScreenImage(TkConfigScreenItemTemplate):
 		dd = h.dataPacks.get_pack_data(datapackID)
 
 		archive = zipfile.ZipFile(dd["path"])
-		imgdata = None
 		try:
 			imgdata = archive.read(self.data["file"])
 		except KeyError:

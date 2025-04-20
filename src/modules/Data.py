@@ -1,7 +1,7 @@
 from src.modules.Managers.DatapackManager import DatapackManager
 from src.modules.Managers.StructureSpacer import StructureSpacer
 from src.modules.Managers.BiomeBlenderNew import BiomeBlender
-from src.modules.Managers.DPConfigHandler import CustomConfigManager
+from src.modules.Managers.ConfigHandler import CustomConfigManager
 
 
 class DataHandler:
