@@ -1,5 +1,6 @@
 import os, datetime
 from src.data.project import META
+from PySide6 import QtWidgets
 
 # A log-writing singleton.
 # Serves only to create the backend log for the app.
@@ -25,7 +26,9 @@ class Writer:
 			self.log_file = open(self.log_file_path, "w+", encoding="UTF-8")
 			self.log_file.close()
 
-			self.print("Log created")
+			self.browserWidget = None
+
+			self.print("New log created")
 
 	def print(self, text):
 		now = datetime.datetime.now()
@@ -35,8 +38,56 @@ class Writer:
 		self.log_file.write(line)
 		self.log_file.close()
 
+		if self.browserWidget is not None:
+			self.browserWidget.updateLog()
+
+	def printInfo(self, text):
+		self.print(text)
+
 	def end(self):
 		self.print("App closed")
 
 	def __del__(self):
-		self.print("Log writing terminated")
+		self.print("Log writing somehow terminated")
+
+	def addBrowserWidget(self, w):
+		self.browserWidget = w
+
+
+class BrowserWidget(QtWidgets.QWidget):
+	def __init__(self):
+		super().__init__()
+		self.layout = QtWidgets.QVBoxLayout(self)
+		self.setLayout(self.layout)
+
+		self.writerObject = Writer()
+		self.writerObject.addBrowserWidget(self)
+
+		self.changeLogStateButton = QtWidgets.QPushButton("Mode: Everything")
+		self.changeLogStateButton.clicked.connect(self.buttonChanged)
+		self.layout.addWidget(self.changeLogStateButton)
+
+		self.textBox = QtWidgets.QTextBrowser()
+		self.textBox.setText("this is a text browser")
+		self.layout.addWidget(self.textBox)
+
+		self.buttonLayout = QtWidgets.QHBoxLayout()
+
+		self.openFileButton = QtWidgets.QPushButton("Open log file")
+		self.openFileButton.clicked.connect(self.openFile)
+		self.buttonLayout.addWidget(self.openFileButton)
+
+		self.layout.addLayout(self.buttonLayout)
+
+		self.updateLog()
+
+	def updateLog(self):
+		log_file = open(self.writerObject.log_file_path, "r", encoding="UTF-8")
+		self.textBox.setText(log_file.read())
+		log_file.close()
+
+	def openFile(self):
+		os.startfile(self.writerObject.log_file_path)
+
+	def buttonChanged(self):
+		pass

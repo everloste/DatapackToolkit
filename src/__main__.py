@@ -1,6 +1,6 @@
 # Import Qt
 from PySide6 import QtCore, QtWidgets, QtGui
-import sys, os
+import sys
 
 # Import GUI (and ONLY Gui)
 import src.modules.Gui.Dialogs as Dialogs
@@ -80,7 +80,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
 	@QtCore.Slot()
 	def showLog(self):
-		os.startfile(Log.Writer().log_file_path)
+		self.logBrowser = Log.BrowserWidget()
+		self.logBrowser.show()
 
 
 class MainWindowWidget(QtWidgets.QWidget):

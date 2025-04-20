@@ -37,7 +37,8 @@ class CustomConfigManager:
 				if pack not in self.packs:
 					self.packs.add(pack)
 					self.handlers[pack] = Config(pack, self.manager.get_pack_config(pack))
-					print(f"Loaded config for {pack}")
+					self.log.printInfo(f"Loaded dpconfig from archive for '{pack}'")
+
 		removals = set()
 		for pack in self.packs:
 			if pack not in pack_list:
@@ -60,7 +61,7 @@ class CustomConfigManager:
 			return None
 
 		else:
-			self.log.print(f"Writing changes made using config to '{datapack.name}'...")
+			self.log.print(f"Writing changes made using dpconfig to '{datapack.name}'...")
 
 			# Load working objects
 			config = self.handlers[datapack.name]
@@ -74,7 +75,7 @@ class CustomConfigManager:
 
 				# Skip if no input
 				if method.input is None:
-					self.log.print(f"Ignoring method '{method_name}' - no input detected")
+					self.log.print(f"Ignoring method '{method_name}' (input is null)")
 					continue
 
 				# Load input
@@ -87,9 +88,11 @@ class CustomConfigManager:
 					except:
 						self.log.print(f"Failed to use transformer of method '{method_name}', aborted writing")
 						continue
+				else:
+					self.log.printInfo(f"Method '{method_name}' has no transformer, ignoring")
 
 				# Iterate through accessors to write transformed value to JSONs
-				for accessor in method.accessors:
+				for ai, accessor in enumerate(method.accessors):
 					# Create a list of all files we need to modify
 					modifiable_files: list = accessor["file_path"] if isinstance(accessor["file_path"], list) else [accessor["file_path"]]
 					exact_file_paths = [x[2:] for x in modifiable_files if x[:2] == "./"]
@@ -117,7 +120,7 @@ class CustomConfigManager:
 
 							outval = None
 							if "method" not in accessor:
-								self.log.print(f"No method in accessor for method {method_name}")
+								self.log.print(f"No write method in accessor {ai} for method '{method_name}'")
 								continue
 
 							else:
@@ -166,19 +169,20 @@ class CustomConfigManager:
 										outval = inval
 
 								except:
-									self.log.print(f"Accessor for method '{method_name}' failed to use its write method:\n\tValue: {inval}\n\tTo key: {last_key}\n\tUsing write method: {write_method}\n\tIn file: {file}")
+									self.log.print(f"Accessor {ai} for method '{method_name}' failed to use its write method:\n\tValue: {inval}\n\tTo key: {last_key}\n\tUsing write method: {write_method}\n\tIn file: {file}")
 									continue
 
 							if outval is not None:
 								deep_struct[last_key] = outval
+								self.log.printInfo(f"Accessor {ai} for method '{method_name}' successful")
 							else:
-								self.log.print(f"Accessor for method '{method_name}' failed to write value (final value is None)\n\tValue: {inval}\n\tTo key: {last_key}\n\tIn file: {file}")
+								self.log.print(f"Accessor {ai} for method '{method_name}' failed to write value (final value is None)\n\tValue: {inval}\n\tTo key: {last_key}\n\tIn file: {file}")
 								continue
 
 							datapack.rewrite_file(file, json.dumps(struct))
 
 					if len(matched_files) == 0:
-						self.log.print(f"Accessor for method '{method_name}' failed to write - no files matching file path {modifiable_files}")
+						self.log.print(f"Accessor {ai} for method '{method_name}' failed to write - no files matching file path {modifiable_files} or {exact_file_paths}")
 					matched_files.clear()
 
 
