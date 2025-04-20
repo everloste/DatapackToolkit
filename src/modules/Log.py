@@ -80,6 +80,7 @@ class BrowserWidget(QtWidgets.QWidget):
 		self.layout.addLayout(self.buttonLayout)
 
 		self.updateLog()
+		self.resize(500, 600)
 
 	def updateLog(self):
 		log_file = open(self.writerObject.log_file_path, "r", encoding="UTF-8")
