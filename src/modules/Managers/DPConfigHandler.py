@@ -67,6 +67,8 @@ class CustomConfigManager:
 			config = self.handlers[datapack.name]
 			pack_files: list[str] = datapack.archive.namelist()
 
+			already_edited_files = dict()
+
 			# Iterate through methods in config
 			for method_name in config.methods:
 
@@ -89,13 +91,18 @@ class CustomConfigManager:
 						self.log.print(f"Failed to use transformer of method '{method_name}', aborted writing")
 						continue
 				else:
-					self.log.printInfo(f"Method '{method_name}' has no transformer, ignoring")
+					self.log.printInfo(f"Method '{method_name}' has no method-wide transformer")
 
 				# Iterate through accessors to write transformed value to JSONs
 				for ai, accessor in enumerate(method.accessors):
 					# Create a list of all files we need to modify
 					modifiable_files: list = accessor["file_path"] if isinstance(accessor["file_path"], list) else [accessor["file_path"]]
 					exact_file_paths = [x[2:] for x in modifiable_files if x[:2] == "./"]
+
+					inval = value
+					if "transformer" in accessor:
+						inval = method.readTransformerArgument(accessor["transformer"])
+						self.log.printInfo(f"Accessor {ai} for method '{method_name}' has own transformer value")
 
 					# Now let's go throught every file in the archive
 					matched_files = list()
@@ -106,8 +113,11 @@ class CustomConfigManager:
 							matched_files.append(file)
 
 							keys = accessor["value_path"].split("/")
-							struct = json.loads(datapack.archive.read(file))
-							inval = value
+
+							if file not in already_edited_files:
+								already_edited_files[file] = json.loads(datapack.archive.read(file)).copy()
+
+							struct = already_edited_files[file]
 
 							deep_struct = struct
 							for key in keys[:-1]:
@@ -179,11 +189,13 @@ class CustomConfigManager:
 								self.log.print(f"Accessor {ai} for method '{method_name}' failed to write value (final value is None)\n\tValue: {inval}\n\tTo key: {last_key}\n\tIn file: {file}")
 								continue
 
-							datapack.rewrite_file(file, json.dumps(struct))
-
 					if len(matched_files) == 0:
 						self.log.print(f"Accessor {ai} for method '{method_name}' failed to write - no files matching file path {modifiable_files} or {exact_file_paths}")
 					matched_files.clear()
+
+			for file in already_edited_files:
+				self.log.printInfo(f"Overwriting file {file}")
+				datapack.rewrite_file(f"./{file}", json.dumps(already_edited_files[file]))
 
 
 class Config:

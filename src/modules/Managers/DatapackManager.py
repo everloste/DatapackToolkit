@@ -251,21 +251,25 @@ class DatapackManager:
 			temp_path = f"{self.path}.temp"
 
 			compression = ZIP_DEFLATED if compress == True else ZIP_STORED
-			with zipfile.ZipFile(temp_path, "w", compression=compression, compresslevel=level) as final:
+			with (zipfile.ZipFile(temp_path, "w", compression=compression, compresslevel=level) as final):
+
 				for item in self.archive.infolist():
 					data = self.archive.read(item.filename)
 					new_name = item.filename
 
 					for rule in self.files_to_disable:
-						if item.filename.endswith(rule):
+						if rule[:2] != "./" and item.filename.endswith(rule) \
+						or (rule[:2] == "./" and rule[2:] == item.filename):
 							new_name = f"{item.filename}.disabled"
 
 					for rule in self.files_to_enable:
-						if item.filename.endswith(f"{rule}.disabled"):
+						if rule[:2] != "./" and item.filename.endswith(f"{rule}.disabled") \
+						or (rule[:2] == "./" and f"{rule[2:]}.disabled" == f"{item.filename}.disabled"):
 							new_name = item.filename.removesuffix(".disabled")
 
 					for rule in self.files_to_rewrite:
-						if item.filename.endswith(rule):
+						if (rule[:2] != "./" and item.filename.endswith(rule)) \
+						or (rule[:2] == "./" and rule[2:] == item.filename):
 							data = self.files_to_rewrite[rule]
 
 					final.writestr(new_name, data)

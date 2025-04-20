@@ -176,7 +176,7 @@ class TkConfigScreenImage(TkConfigScreenItemTemplate):
 				img = img.scaledToHeight(self.data["height"])
 			label.setPixmap(img)
 		else:
-			label.setText(f"Failed to load image {self.data['file']}.")
+			label.setText(f"Failed to load image {self.data['file']}")
 
 		self.layout.addWidget(label)
 
@@ -267,6 +267,8 @@ class TkConfigScreenSpinbox(TkConfigScreenItemTemplate):
 		self.setLayout(self.layout)
 
 	def _changed(self, i):
+		if self.data["value"]["type"] == "percent":
+			i = i/100
 		self.config.inputToMethod(self.data["method"], i)
 
 
@@ -327,8 +329,10 @@ class TkConfigScreenSlider(TkConfigScreenItemTemplate):
 		self.layout.addWidget(self.mrSlidey)
 
 	def _changed(self, i):
-		self.config.inputToMethod(self.data["method"], i)
 		self.valueLabel.setText(f"{i}{self.valueLabelSuffix}")
+		if self.data["value"]["type"] == "percent":
+			i = i/100
+		self.config.inputToMethod(self.data["method"], i)
 
 
 # TYPE switch
@@ -348,12 +352,16 @@ class TkConfigScreenSwitch(TkConfigScreenItemTemplate):
 			QtWidgets.QSpacerItem(2, 0, QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Minimum))
 
 		# Build the switch
-		if "default" in self.data: self.defaultButtonState = self.data["default"]
-		else: self.defaultButtonState = True
+		if "default" in self.data:
+			self.defaultButtonState = True if self.data["default"] == "enabled" else False
+		else:
+			self.defaultButtonState = True
+
 		self.buttonState = self.defaultButtonState
 		self.button = QtWidgets.QPushButton()
 		self.button.clicked.connect(self._changed)
 		self.button.setFixedWidth(self.entryWidth)
+
 		if self.buttonState:
 			self.button.setText("Enabled (ON)")
 		else:
