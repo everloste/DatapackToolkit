@@ -356,15 +356,25 @@ class TkConfigScreenSwitch(TkConfigScreenItemTemplate):
 		else:
 			self.defaultButtonState = True
 
+		if "enabled_text" in self.data:
+			self.enabledText = self.data["enabled_text"]
+		else:
+			self.enabledText = "Enabled (On)"
+
+		if "disabled_text" in self.data:
+			self.disabledText = self.data["disabled_text"]
+		else:
+			self.disabledText = "Disabled (Off)"
+
 		self.buttonState = self.defaultButtonState
 		self.button = QtWidgets.QPushButton()
 		self.button.clicked.connect(self._changed)
 		self.button.setFixedWidth(self.entryWidth)
 
 		if self.buttonState:
-			self.button.setText("Enabled (ON)")
+			self.button.setText(self.enabledText)
 		else:
-			self.button.setText("Disabled (OFF)")
+			self.button.setText(self.disabledText)
 
 		self.layout.addWidget(self.button)
 
@@ -372,9 +382,9 @@ class TkConfigScreenSwitch(TkConfigScreenItemTemplate):
 		self.buttonState = (True - self.buttonState)
 
 		if self.buttonState:
-			self.button.setText("Enabled (ON)")
+			self.button.setText(self.enabledText)
 		else:
-			self.button.setText("Disabled (OFF)")
+			self.button.setText(self.disabledText)
 
 		if self.buttonState != self.defaultButtonState:
 			self.config.inputToMethod(self.data["method"], 1)
