@@ -4,7 +4,7 @@ import json, math
 
 class CustomConfigManager:
 
-	def __init__(self, dpmanager):
+	def __init__(self, dpmanager: DatapackManager):
 		self.manager = dpmanager
 		self.manager.add_child_manager(self)
 
@@ -59,7 +59,7 @@ class CustomConfigManager:
 				# Load method object
 				method: ConfigMethod = config.methods[method_name]
 
-				# Skip if no input
+				# Skip this method if no input
 				if method.input is None:
 					self.log.print(f"Ignoring method '{method_name}' (input is null)")
 					continue
@@ -67,7 +67,7 @@ class CustomConfigManager:
 				# Load input
 				value = method.input
 
-				# Apply transformer to value IF it has one
+				# Apply transformer to input IF it has one
 				if hasattr(method, "transformer"):
 					try:
 						value = method.readTransformerArgument(method.transformer)
@@ -79,16 +79,18 @@ class CustomConfigManager:
 
 				# Iterate through accessors to write transformed value to JSONs
 				for ai, accessor in enumerate(method.accessors):
+
 					# Create a list of all files we need to modify
 					modifiable_files: list = accessor["file_path"] if isinstance(accessor["file_path"], list) else [accessor["file_path"]]
 					exact_file_paths = [x[2:] for x in modifiable_files if x[:2] == "./"]
 
+					# Transform value if accessor has transformer
 					inval = value
 					if "transformer" in accessor:
 						inval = method.readTransformerArgument(accessor["transformer"])
 						self.log.printInfo(f"Accessor {ai} for method '{method_name}' has own transformer value")
 
-					# Now let's go throught every file in the archive
+					# Now let's go through every file in the archive
 					matched_files = list()
 					for file in pack_files:
 
@@ -96,13 +98,15 @@ class CustomConfigManager:
 						if file.endswith(tuple(modifiable_files)) or (file.startswith(tuple(exact_file_paths)) and file.endswith(tuple(exact_file_paths))):
 							matched_files.append(file)
 
+							# Create key path
 							keys = accessor["value_path"].split("/")
 
+							# Load JSON file
 							if file not in already_edited_files:
 								already_edited_files[file] = json.loads(datapack.archive.read(file)).copy()
-
 							struct = already_edited_files[file]
 
+							# Navigate JSON using the key path
 							deep_struct = struct
 							for key in keys[:-1]:
 								if key.isdigit():
@@ -112,11 +116,11 @@ class CustomConfigManager:
 							if last_key.isdigit():
 								last_key = int(last_key)
 
+							# Now write it using the write method
 							outval = None
 							if "method" not in accessor:
 								self.log.print(f"No write method in accessor {ai} for method '{method_name}'")
 								continue
-
 							else:
 								write_method = accessor["method"]
 
@@ -188,7 +192,7 @@ class Config:
 	def __init__(self, datapackID: str, file: str | dict):
 		self.datapackID = datapackID
 		self.jsonObject = dict()
-		
+
 		if isinstance(file, dict):
 			self.jsonObject = file.copy()
 		elif isinstance(file, str):
