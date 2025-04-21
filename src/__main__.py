@@ -21,7 +21,7 @@ class App(QtWidgets.QApplication):
 		self.setApplicationName(project.META.app_name)
 		self.setDesktopSettingsAware(True)
 		self.setStyle(project.META.default_theme)
-		self.setWindowIcon(QtGui.QPixmap("assets/icon.png"))
+		self.setWindowIcon(QtGui.QPixmap("./assets/icon.png"))
 
 		self.logProcess = Log.Writer()
 		Icons.Provider.set_app(self)

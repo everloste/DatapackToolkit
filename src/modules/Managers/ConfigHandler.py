@@ -206,7 +206,12 @@ class Config:
 
 		self.methods = dict()
 		for entry in self.jsonObject["config"]["methods"]:
-			self.methods[entry] = ConfigMethod(self.jsonObject["config"]["methods"][entry])
+			self.methods[entry] = ConfigMethod(self.jsonObject["config"]["methods"][entry], self)
+
+		self.slots = dict()
+		if "slots" in self.jsonObject["config"]:
+			for entry in self.jsonObject["config"]["slots"]:
+				self.slots[entry] = self.jsonObject["config"]["slots"][entry]
 
 	def getWidgets(self) -> list[dict]:
 		return self.widgets
@@ -214,12 +219,20 @@ class Config:
 	def inputToMethod(self, method: str, value):
 		self.methods[method].input = value
 
+	def inputToSlot(self, slots: str | list, value):
+		if isinstance(slots, str):
+			self.slots[slots] = value
+		elif isinstance(slots, list):
+			for slot in slots:
+				self.slots[slot] = value
+
 
 class ConfigMethod:
 	input = None
 
-	def __init__(self, data: dict):
+	def __init__(self, data: dict, master: Config):
 		self.jsonObject = data
+		self.masterConfig = master
 		self.input = None
 
 		if "accessors" in self.jsonObject:
@@ -228,16 +241,29 @@ class ConfigMethod:
 		if "transformer" in self.jsonObject:
 			self.transformer = self.jsonObject["transformer"]
 
-	def readTransformerArgument(self, argument: str | dict | int | float):
+	def readTransformerArgument(self, argument: str | dict | int | float | None):
+
+		# Argument is a string...
 		if isinstance(argument, str):
-			if argument == "input":
+			if argument[0] == "$":
+				if argument == "$input" or argument == "$in":
+					return self.input
+				else:
+					try:
+						return self.readTransformerArgument(self.masterConfig.slots[argument[1:]])
+					except KeyError:
+						return None
+
+			elif argument == "input":
 				return self.input
 			else:
 				return argument
 
+		# Argument is a number...
 		elif isinstance(argument, int) or isinstance(argument, float):
 			return argument
 
+		# Argument is an object (function)
 		elif isinstance(argument, dict):
 			if not "function" in argument:
 				return None

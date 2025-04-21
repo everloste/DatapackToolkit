@@ -132,9 +132,17 @@ class TkConfigScreenItemTemplate(QtWidgets.QWidget):
 		self.config = config
 		self.entryWidth = 200
 		self.textWidth = 300
+		self.slots = None
+
+		if "slots" in self.data:
+			self.slots = list()
+			if isinstance(self.data["slots"], str):
+				self.slots.append(str(self.data["slots"]))
+			elif isinstance(self.data["slots"], list):
+				for slot in self.data["slots"]:
+					self.slots.append(str(slot))
 
 		self.setMinimumWidth(550)
-
 		self.__build__()
 
 	def __build__(self):
@@ -270,6 +278,10 @@ class TkConfigScreenSpinbox(TkConfigScreenItemTemplate):
 			i = i/100
 		self.config.inputToMethod(self.data["method"], i)
 
+		if self.slots is not None:
+			self.config.inputToSlot(self.slots, i)
+
+
 
 # TYPE slider
 class TkConfigScreenSlider(TkConfigScreenItemTemplate):
@@ -333,6 +345,9 @@ class TkConfigScreenSlider(TkConfigScreenItemTemplate):
 			i = i/100
 		self.config.inputToMethod(self.data["method"], i)
 
+		if self.slots is not None:
+			self.config.inputToSlot(self.slots, i)
+
 
 # TYPE switch
 class TkConfigScreenSwitch(TkConfigScreenItemTemplate):
@@ -388,8 +403,12 @@ class TkConfigScreenSwitch(TkConfigScreenItemTemplate):
 
 		if self.buttonState != self.defaultButtonState:
 			self.config.inputToMethod(self.data["method"], 1)
+			if self.slots is not None:
+				self.config.inputToSlot(self.slots, 1)
 		else:
 			self.config.inputToMethod(self.data["method"], None)
+			if self.slots is not None:
+				self.config.inputToSlot(self.slots, None)
 
 
 TkConfigWidgetStringIdentifiers = {
