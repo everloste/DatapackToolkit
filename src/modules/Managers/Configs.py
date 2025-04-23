@@ -21,7 +21,7 @@ class ConfigManager:
 				if pack not in self.packs:
 					self.packs.add(pack)
 					self.handlers[pack] = Config(pack, self.manager.get_pack_config(pack))
-					self.log.printInfo(f"Loaded dpconfig from archive for '{pack}'")
+					self.log.printInfo(f"[CONFIG] Detected and loaded config for '{pack}'")
 
 		removals = set()
 		for pack in self.packs:
@@ -45,7 +45,7 @@ class ConfigManager:
 			return None
 
 		else:
-			self.log.print(f"Writing changes made using dpconfig to '{datapack.name}'...")
+			self.log.printInfo(f"[CONFIG] Writing changes made using dpconfig to '{datapack.name}'...")
 
 			# Load working objects
 			config = self.handlers[datapack.name]
@@ -61,7 +61,7 @@ class ConfigManager:
 
 				# Skip this method if no input
 				if method.input is None:
-					self.log.print(f"Ignoring method '{method_name}' (input is null)")
+					self.log.printInfo(f"[CONFIG] Ignoring method '{method_name}' (input is null)")
 					continue
 
 				# Load input
@@ -72,10 +72,10 @@ class ConfigManager:
 					try:
 						value = method.readTransformerArgument(method.transformer)
 					except:
-						self.log.print(f"Failed to use transformer of method '{method_name}', aborted writing")
+						self.log.printError(f"[CONFIG] Failed to use transformer of method '{method_name}', aborted writing")
 						continue
 				else:
-					self.log.printInfo(f"Method '{method_name}' has no method-wide transformer")
+					self.log.printInfo(f"[CONFIG] Method '{method_name}' has no method-wide transformer")
 
 				# Iterate through accessors to write transformed value to JSONs
 				for ai, accessor in enumerate(method.accessors):
@@ -88,7 +88,7 @@ class ConfigManager:
 					inval = value
 					if "transformer" in accessor:
 						inval = method.readTransformerArgument(accessor["transformer"])
-						self.log.printInfo(f"Accessor {ai} for method '{method_name}' has own transformer value")
+						self.log.printInfo(f"[CONFIG] Accessor {ai} for method '{method_name}' has own transformer value")
 
 					# Now let's go through every file in the archive
 					matched_files = list()
@@ -119,7 +119,7 @@ class ConfigManager:
 							# Now write it using the write method
 							outval = None
 							if "method" not in accessor:
-								self.log.print(f"No write method in accessor {ai} for method '{method_name}'")
+								self.log.printError(f"[CONFIG] No write method in accessor {ai} for method '{method_name}'")
 								continue
 							else:
 								write_method = accessor["method"]
@@ -154,35 +154,35 @@ class ConfigManager:
 											outval = deep_struct[last_key].copy()
 											outval.remove(inval)
 										else:
-											self.log.print(f"Warn: Tried to use the REMOVE write method on a non-list object:\n\tValue: {inval}\n\tTo key: {last_key}\n\tUsing write method: {write_method}\n\tIn file: {file}")
+											self.log.printError(f"[CONFIG] Tried to use the REMOVE write method on a non-list object:\n\tValue: {inval}\n\tTo key: {last_key}\n\tUsing write method: {write_method}\n\tIn file: {file}")
 
 									elif write_method == "pop":
 										if isinstance(deep_struct[last_key], list):
 											outval = deep_struct[last_key].copy()
 											outval.pop(int(inval))
 										else:
-											self.log.print(f"Warn: Tried to use the POP write method on a non-list object:\n\tValue: {inval}\n\tTo key: {last_key}\n\tUsing write method: {write_method}\n\tIn file: {file}")
+											self.log.printError(f"[CONFIG] Tried to use the POP write method on a non-list object:\n\tValue: {inval}\n\tTo key: {last_key}\n\tUsing write method: {write_method}\n\tIn file: {file}")
 
 									else:
 										outval = inval
 
 								except:
-									self.log.print(f"Accessor {ai} for method '{method_name}' failed to use its write method:\n\tValue: {inval}\n\tTo key: {last_key}\n\tUsing write method: {write_method}\n\tIn file: {file}")
+									self.log.printError(f"[CONFIG] Accessor {ai} for method '{method_name}' failed to use its write method:\n\tValue: {inval}\n\tTo key: {last_key}\n\tUsing write method: {write_method}\n\tIn file: {file}")
 									continue
 
 							if outval is not None:
 								deep_struct[last_key] = outval
-								self.log.printInfo(f"Accessor {ai} for method '{method_name}' successful")
+								self.log.printInfo(f"[CONFIG] Accessor {ai} for method '{method_name}' successful")
 							else:
-								self.log.print(f"Accessor {ai} for method '{method_name}' failed to write value (final value is None)\n\tValue: {inval}\n\tTo key: {last_key}\n\tIn file: {file}")
+								self.log.printError(f"[CONFIG] Accessor {ai} for method '{method_name}' failed to write value (final value is None)\n\tValue: {inval}\n\tTo key: {last_key}\n\tIn file: {file}")
 								continue
 
 					if len(matched_files) == 0:
-						self.log.print(f"Accessor {ai} for method '{method_name}' failed to write - no files matching file path {modifiable_files} or {exact_file_paths}")
+						self.log.printError(f"[CONFIG] Accessor {ai} for method '{method_name}' failed to write - no files matching file path {modifiable_files} or {exact_file_paths}")
 					matched_files.clear()
 
 			for file in already_edited_files:
-				self.log.printInfo(f"Overwriting file {file}")
+				self.log.printInfo(f"[CONFIG] Overwriting file {file}")
 				datapack.rewrite_file(f"./{file}", json.dumps(already_edited_files[file]))
 
 

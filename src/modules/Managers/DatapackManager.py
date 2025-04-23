@@ -5,6 +5,7 @@ from zipfile import ZipFile, ZIP_DEFLATED, ZIP_STORED
 from src.data.project import META
 from dataclasses import dataclass, field
 from src.enums import WidgetUpdateReason
+import src.modules.Log as Log
 
 
 class DatapackManager:
@@ -14,7 +15,7 @@ class DatapackManager:
 	children_widgets: list = list()
 
 	def __init__(self):
-		pass
+		self.log = Log.Writer()
 
 	def __update_children__(self, reason):
 		for child in self.children_managers:
@@ -30,6 +31,7 @@ class DatapackManager:
 			json.loads(archive.read("pack.mcmeta"))
 
 		except KeyError or FileNotFoundError:
+			self.log.printWarn(f"Didn't load {path} - no pack.mcmeta file present")
 			raise FileNotFoundError("Could not load pack.mcmeta. Archive is not a datapack!!! >:(")
 
 		else:
@@ -82,6 +84,8 @@ class DatapackManager:
 			self.pack_order.append(data["id"])
 
 			self.__update_children__(WidgetUpdateReason.DatapackAddition)
+
+			self.log.printInfo(f'''Loaded {path} as '{data["id"]}' ''')
 
 			return data["id"]
 
@@ -249,6 +253,9 @@ class DatapackManager:
 
 		def apply(self, compress: bool = True, level: int = 5):
 			temp_path = f"{self.path}.temp"
+
+			log = Log.Writer()
+			log.printInfo(f"Final write for '{self.name}':\n\tDisabling files: {self.files_to_disable}\n\tEnabling files: {self.files_to_enable}\n\tRewriting files: {self.files_to_rewrite.keys()}")
 
 			compression = ZIP_DEFLATED if compress == True else ZIP_STORED
 			with (zipfile.ZipFile(temp_path, "w", compression=compression, compresslevel=level) as final):
