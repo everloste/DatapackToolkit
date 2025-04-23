@@ -1,6 +1,8 @@
-#
+# Project things
 src/logs
 logs/
+__main__.build/
+__main__.dist/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

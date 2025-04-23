@@ -21,33 +21,36 @@ Export modified versions by clicking ***Export***.
 ### Prerequisites 
 Datapack Toolkit is built in Python and Qt.
 
-After picking the right IDE, make sure you have Python **3.12** installed.
+After picking the right IDE, make sure you have Python 3.12 installed. 3.13 might bork things.
 
-Create a virtual environment (ideally). Your IDE should take care of this. [Or if not...](https://doc.qt.io/qtforpython-6/gettingstarted.html#installation)
+Create a virtual environment (ideally). Your IDE should take care of this. [If not...](https://doc.qt.io/qtforpython-6/gettingstarted.html#installation)
 
-You only need **PySide6** to work on the app:
+Install the app's package requirements. Which right now is really just PySide6.
 
-    pip install pyside6
+    pip install -r requirements.txt
 
-That's all. Have fun reating my spaghetti :3
+And that's all. Have fun reating my spaghetti :3
 
-### Packaging
+### Packaging using PyInstaller
 
-Datapack Toolkit is packaged using PyInstaller.
-It has [requirements](https://pyinstaller.org/en/stable/requirements.html).
-If you're good to go, run:
+Datapack Toolkit can be packaged for use as a standalone app using PyInstaller. Make sure it's installed as a package.
 
-    pip install pyinstaller
-
-Package the app in your terminal. Make sure you're in the project directory and run the following command to package the app:
+Open your terminal. Make sure you're in the project directory and run the following command to package the app:
 
     pyinstaller -D -w -y --icon=src/assets/icon.ico --add-data=src/assets:src/assets --name=dptoolkit src/__main__.py
+
+Make sure the `assets` folder is included alongside the exported executable.
+
+### Compiling using Nuitka
+
+You can also compile Datapack Toolkit using Nuitka. This is preferred over PyInstaller as the performance of a compiled app is somewhat better.
+
+I'll write more details on this here soooon tm
 
 ## Plans for Datapack Toolkit
 
 There are a few thins I would like to do:
 - Biome removal/replacement (such as for _Terralith_ or _Alpine_)
-- Nuitka
 
 and now... mhmm.. i wan spaghetti now...
 
