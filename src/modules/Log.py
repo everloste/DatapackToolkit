@@ -23,6 +23,7 @@ class Writer:
 				os.makedirs(self.log_folder)
 
 			self.log_file_path = f"{self.log_folder}/latest.log"
+			self.log_file_path_abs = os.path.abspath(self.log_file_path)
 			self.log_file = open(self.log_file_path, "w+", encoding="UTF-8")
 			self.log_file.close()
 
@@ -72,19 +73,29 @@ class BrowserWidget(QtWidgets.QWidget):
 		self.writerObject = Writer()
 		self.writerObject.addBrowserWidget(self)
 
-		self.changeLogStateButton = QtWidgets.QPushButton("Log verbosity: Everything")
-		self.changeLogStateButton.clicked.connect(self.buttonStateChanged)
-		self.layout.addWidget(self.changeLogStateButton)
+		self.fileLabel = QtWidgets.QLabel("<h4>Current session's log:</h4>")
+		self.layout.addWidget(self.fileLabel)
 
 		self.textBox = QtWidgets.QTextBrowser()
-		self.textBox.setText("this is a text browser")
+		self.textBox.setText("Log hasn't loaded yet.")
 		self.layout.addWidget(self.textBox)
 
+		self.someLabel = QtWidgets.QLabel("Logging functionality is work in progress!<br>Logs from previous sessions aren't currently kept. Sorry 🥺")
+		self.layout.addWidget(self.someLabel)
+
 		self.buttonLayout = QtWidgets.QHBoxLayout()
+
+		self.changeLogStateButton = QtWidgets.QPushButton("Log verbosity: Everything")
+		self.changeLogStateButton.clicked.connect(self.buttonStateChanged)
+		self.buttonLayout.addWidget(self.changeLogStateButton)
 
 		self.openFileButton = QtWidgets.QPushButton("Open log file")
 		self.openFileButton.clicked.connect(self.openFile)
 		self.buttonLayout.addWidget(self.openFileButton)
+
+		self.openFolderButton = QtWidgets.QPushButton("Open log folder")
+		self.openFolderButton.clicked.connect(self.openFolder)
+		self.buttonLayout.addWidget(self.openFolderButton)
 
 		self.layout.addLayout(self.buttonLayout)
 
@@ -97,7 +108,10 @@ class BrowserWidget(QtWidgets.QWidget):
 		log_file.close()
 
 	def openFile(self):
-		os.startfile(self.writerObject.log_file_path)
+		os.startfile(self.writerObject.log_file_path_abs)
+
+	def openFolder(self):
+		os.startfile(os.path.abspath(self.writerObject.log_folder))
 
 	def buttonStateChanged(self):
 		META.log_verbosity_level += 1
