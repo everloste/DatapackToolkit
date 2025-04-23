@@ -1,5 +1,5 @@
 import os, datetime
-from src.data.project import META
+from src.data.project import META, LOG_VERBOSITY_LEVEL
 from PySide6 import QtWidgets
 
 # A log-writing singleton.
@@ -42,7 +42,16 @@ class Writer:
 			self.browserWidget.updateLog()
 
 	def printInfo(self, text):
-		self.print(text)
+		if META.log_verbosity_level >= LOG_VERBOSITY_LEVEL.ALL:
+			self.print(text)
+
+	def printWarn(self, text):
+		if META.log_verbosity_level >= LOG_VERBOSITY_LEVEL.WARN:
+			self.print(f"[WARN] {text}")
+
+	def printError(self, text):
+		if META.log_verbosity_level >= LOG_VERBOSITY_LEVEL.ERROR:
+			self.print(f"[ERROR] {text}")
 
 	def end(self):
 		self.print("App closed")
@@ -63,8 +72,8 @@ class BrowserWidget(QtWidgets.QWidget):
 		self.writerObject = Writer()
 		self.writerObject.addBrowserWidget(self)
 
-		self.changeLogStateButton = QtWidgets.QPushButton("Mode: Everything")
-		self.changeLogStateButton.clicked.connect(self.buttonChanged)
+		self.changeLogStateButton = QtWidgets.QPushButton("Log verbosity: Everything")
+		self.changeLogStateButton.clicked.connect(self.buttonStateChanged)
 		self.layout.addWidget(self.changeLogStateButton)
 
 		self.textBox = QtWidgets.QTextBrowser()
@@ -90,5 +99,15 @@ class BrowserWidget(QtWidgets.QWidget):
 	def openFile(self):
 		os.startfile(self.writerObject.log_file_path)
 
-	def buttonChanged(self):
-		pass
+	def buttonStateChanged(self):
+		META.log_verbosity_level += 1
+		if META.log_verbosity_level > LOG_VERBOSITY_LEVEL.ALL:
+			META.log_verbosity_level = 0
+		strings = [
+			"Nothing",
+			"Only errors",
+			"Warns and errors",
+			"Everything"
+		]
+		ns = strings[META.log_verbosity_level]
+		self.changeLogStateButton.setText(f"Log verbosity: {ns}")
