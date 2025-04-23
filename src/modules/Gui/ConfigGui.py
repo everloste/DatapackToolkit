@@ -2,123 +2,8 @@ import zipfile
 
 from PySide6 import QtWidgets, QtGui
 from PySide6.QtCore import Qt
-from src.modules.Managers.ConfigHandler import Config
+from src.modules.Managers.Configs import Config
 from src.modules.Data import DataHandler
-
-
-# class ConfigScreenItemWidget(QtWidgets.QWidget):
-# 	info: Config.Widget = None
-#
-# 	def __init__(self, info):
-# 		super().__init__()
-# 		self.info = info
-# 		self.__build__()
-#
-# 	def __build__(self):
-# 		self.layout = QtWidgets.QHBoxLayout()
-# 		self.setLayout(self.layout)
-#
-#
-# class ConfigScreen(QtWidgets.QWidget):
-#
-# 	def __init__(self, pack_name: str):
-# 		super().__init__()
-#
-# 		data = DataHandler()
-#
-# 		self.config_object = data.customConfigs.get_pack_config(pack_name)
-#
-# 		self.tab_name = self.config_object.tab_name
-#
-# 		self.widgets = list()
-#
-# 		for item in self.config_object.get_widgets():
-# 			if item.type == "value":
-# 				self.widgets.append(self.ValueWidget(item))
-# 			elif item.type == "title":
-# 				self.widgets.append(self.TitleWidget(item))
-# 			elif item.type == "large_title":
-# 				self.widgets.append(self.TitleWidget(item))
-#
-#
-# 		# Layout
-#
-# 		self.layout = QtWidgets.QVBoxLayout()
-# 		self.layout.setSpacing(0)
-# 		self.setLayout(self.layout)
-#
-# 		print(self.widgets)
-# 		for w in self.widgets:
-# 			self.layout.addWidget(w)
-#
-# 		self.layout.addItem(QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Policy.Minimum, QtWidgets.QSizePolicy.Policy.Expanding))
-#
-#
-#
-#
-# 	class ValueWidget(ConfigScreenItemWidget):
-# 		def __build__(self):
-# 			self.layout = QtWidgets.QHBoxLayout()
-#
-# 			# First we make a little label :3
-# 			text = self.info.getText()
-# 			if self.info.tooltip: text += "*"
-# 			label = QtWidgets.QLabel(text)
-# 			self.layout.addWidget(label)
-#
-# 			if self.info.tooltip: self.setToolTip(self.info.tooltip)
-#
-# 			# Second the entry widget
-# 			self.entry = None
-# 			if self.info.value_type == ValueType.Int:
-# 				self.entry = QtWidgets.QSpinBox()
-# 			elif self.info.value_type == ValueType.Float:
-# 				self.entry = QtWidgets.QDoubleSpinBox()
-# 			elif self.info.value_type == ValueType.Percent:
-# 				self.entry = QtWidgets.QSpinBox()
-# 				self.entry.setSuffix("%")
-#
-#
-# 			self.entry.setMinimum(self.info.min_value)
-# 			self.entry.setMaximum(self.info.max_value)
-# 			if not self.info.input: self.entry.setValue(self.info.default_value)
-# 			else: self.entry.setValue(self.info.input)
-# 			if self.info.step: self.entry.setSingleStep(self.info.step)
-#
-# 			self.entry.valueChanged.connect(self.__changed__)
-#
-# 			self.layout.addWidget(self.entry)
-#
-# 			self.setLayout(self.layout)
-#
-# 		def __changed__(self, i):
-# 			if self.info.value_type == ValueType.Percent:
-# 				i = i/100
-# 			self.info.setInput(i)
-#
-#
-# 	class TitleWidget(ConfigScreenItemWidget):
-# 		def __build__(self):
-# 			self.layout = QtWidgets.QHBoxLayout()
-#
-# 			text = self.info.getText()
-# 			label = QtWidgets.QLabel(f"<h3>{text}</h3>")
-# 			self.layout.addWidget(label)
-#
-# 			self.setLayout(self.layout)
-#
-#
-# 	class LargeTitleWidget(ConfigScreenItemWidget):
-# 		def __build__(self):
-# 			self.layout = QtWidgets.QHBoxLayout()
-#
-# 			text = self.info.getText()
-# 			label = QtWidgets.QLabel(f"<h2>{text}</h2>")
-# 			self.layout.addWidget(label)
-#
-# 			self.setLayout(self.layout)
-#
-#
 
 
 # TYPE UNKNOWN
@@ -133,6 +18,10 @@ class TkConfigScreenItemTemplate(QtWidgets.QWidget):
 		self.entryWidth = 200
 		self.textWidth = 300
 		self.slots = None
+		self.method = None
+
+		if "method" in self.data:
+			self.method = self.data["method"]
 
 		if "slots" in self.data:
 			self.slots = list()
@@ -152,6 +41,12 @@ class TkConfigScreenItemTemplate(QtWidgets.QWidget):
 		self.layout.addWidget(label)
 
 		self.setLayout(self.layout)
+
+	def insertValues(self, v):
+		if self.method is not None:
+			self.config.inputToMethod(self.data["method"], v)
+		if self.slots is not None:
+			self.config.inputToSlot(self.slots, v)
 
 
 # TYPE image
@@ -267,20 +162,16 @@ class TkConfigScreenSpinbox(TkConfigScreenItemTemplate):
 			spinnybox.setSuffix(str(self.data["value"]["suffix"]))
 
 		# Finalise
-		spinnybox.valueChanged.connect(self._changed)
+		spinnybox.valueChanged.connect(self.valueChanged)
 		spinnybox.setFixedWidth(self.entryWidth)
 		self.layout.addWidget(spinnybox)
 
 		self.setLayout(self.layout)
 
-	def _changed(self, i):
+	def valueChanged(self, i):
 		if self.data["value"]["type"] == "percent":
 			i = i/100
-		self.config.inputToMethod(self.data["method"], i)
-
-		if self.slots is not None:
-			self.config.inputToSlot(self.slots, i)
-
+		self.insertValues(i)
 
 
 # TYPE slider
@@ -327,7 +218,7 @@ class TkConfigScreenSlider(TkConfigScreenItemTemplate):
 			self.mrSlidey.setValue(self.mrSlidey.minimum())
 
 		self.mrSlidey.setFixedWidth(self.entryWidth-40)
-		self.mrSlidey.valueChanged.connect(self._changed)
+		self.mrSlidey.valueChanged.connect(self.valueChanged)
 
 		# The label for the slider value
 		self.valueLabelSuffix = "%" if self.data["value"]["type"] == "percent" else ""
@@ -339,14 +230,12 @@ class TkConfigScreenSlider(TkConfigScreenItemTemplate):
 		self.layout.addWidget(self.valueLabel)
 		self.layout.addWidget(self.mrSlidey)
 
-	def _changed(self, i):
+	def valueChanged(self, i):
 		self.valueLabel.setText(f"{i}{self.valueLabelSuffix}")
+
 		if self.data["value"]["type"] == "percent":
 			i = i/100
-		self.config.inputToMethod(self.data["method"], i)
-
-		if self.slots is not None:
-			self.config.inputToSlot(self.slots, i)
+		self.insertValues(i)
 
 
 # TYPE switch
@@ -383,7 +272,7 @@ class TkConfigScreenSwitch(TkConfigScreenItemTemplate):
 
 		self.buttonState = self.defaultButtonState
 		self.button = QtWidgets.QPushButton()
-		self.button.clicked.connect(self._changed)
+		self.button.clicked.connect(self.stateChanged)
 		self.button.setFixedWidth(self.entryWidth)
 
 		if self.buttonState:
@@ -393,22 +282,14 @@ class TkConfigScreenSwitch(TkConfigScreenItemTemplate):
 
 		self.layout.addWidget(self.button)
 
-	def _changed(self):
+	def stateChanged(self):
 		self.buttonState = (True - self.buttonState)
 
-		if self.buttonState:
-			self.button.setText(self.enabledText)
-		else:
-			self.button.setText(self.disabledText)
+		if self.buttonState: self.button.setText(self.enabledText)
+		else: self.button.setText(self.disabledText)
 
-		if self.buttonState != self.defaultButtonState:
-			self.config.inputToMethod(self.data["method"], 1)
-			if self.slots is not None:
-				self.config.inputToSlot(self.slots, 1)
-		else:
-			self.config.inputToMethod(self.data["method"], None)
-			if self.slots is not None:
-				self.config.inputToSlot(self.slots, None)
+		r = 1 if (self.buttonState != self.defaultButtonState) else None
+		self.insertValues(r)
 
 
 TkConfigWidgetStringIdentifiers = {

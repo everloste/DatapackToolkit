@@ -1,7 +1,7 @@
 from src.modules.Managers.DatapackManager import DatapackManager
 from src.modules.Managers.StructureSpacer import StructureSpacer
 from src.modules.Managers.BiomeBlenderNew import BiomeBlender
-from src.modules.Managers.ConfigHandler import CustomConfigManager
+from src.modules.Managers.Configs import ConfigManager
 
 
 class DataHandler:
@@ -23,4 +23,4 @@ class DataHandler:
 			print("\tInitializing other modules...")
 			self.structureSets = StructureSpacer(self.dataPacks)
 			self.biomeProviders = BiomeBlender(self.dataPacks)
-			self.customConfigs = CustomConfigManager(self.dataPacks)
+			self.customConfigs = ConfigManager(self.dataPacks)

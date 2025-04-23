@@ -2,7 +2,7 @@ from src.modules.Managers.DatapackManager import DatapackManager
 import src.modules.Log as Log
 import json, math
 
-class CustomConfigManager:
+class ConfigManager:
 
 	def __init__(self, dpmanager: DatapackManager):
 		self.manager = dpmanager
