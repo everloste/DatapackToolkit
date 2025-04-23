@@ -1,4 +1,5 @@
-# _Datapack Toolkit_
+![Datapack Toolkit logo](https://raw.githubusercontent.com/everloste/DatapackToolkit/refs/heads/main/assets/title-export.png)
+
 An easy-to-use Minecraft worldgen datapack configuration tool made in a weekend.
 
 Currently supports:
