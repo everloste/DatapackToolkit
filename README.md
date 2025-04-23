@@ -1,6 +1,6 @@
 ![Datapack Toolkit logo](https://raw.githubusercontent.com/everloste/DatapackToolkit/refs/heads/main/assets/title-export.png)
 
-An easy-to-use Minecraft worldgen datapack configuration tool made in a weekend.
+An easy-to-use Minecraft worldgen datapack configuration tool created in a weekend.
 
 Currently supports:
 - Picking biome definition providers
@@ -10,11 +10,12 @@ Currently supports:
 The result are modified datapacks ready to be used.
 
 ## Using Datapack Toolkit
-Simply download the latest version and run the app!
-No installation is necessary.
+No installation is necessary. Simply download the latest version, extract, and run the app! (Run the executable named `dptoolkit`)
 
-Load your datapack(s) by clicking ***Load*** in the top left.
-Export modified versions by clicking ***Export***.
+Load your datapack(s), make your changes, and then export them.
+
+They should then be put in the same order in-game as they were in Datapack Toolkit if you want the same results!
+Datapack Toolkit takes their order into consideration.
 
 ## Working on Datapack Toolkit
 
@@ -45,7 +46,11 @@ Make sure the `assets` folder is included alongside the exported executable.
 
 You can also compile Datapack Toolkit using Nuitka. This is preferred over PyInstaller as the performance of a compiled app is somewhat better.
 
-I'll write more details on this here soooon tm
+Command for Windows:
+
+```
+python -m nuitka --standalone --enable-plugin=pyside6 --output-filename=dptoolkit --include-data-dir=assets=assets --windows-console-mode=attach --windows-icon-from-ico=assets/icon.ico src/__main__.py
+```
 
 ## Plans for Datapack Toolkit
 
