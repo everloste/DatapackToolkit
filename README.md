@@ -4,6 +4,7 @@ An easy-to-use Minecraft worldgen datapack configuration tool made in a weekend.
 Currently supports:
 - Picking biome definition providers
 - Editing structure set placement
+- Custom configuration screens
 
 The result are modified datapacks ready to be used.
 
@@ -45,8 +46,7 @@ Package the app in your terminal. Make sure you're in the project directory and 
 
 There are a few thins I would like to do:
 - Biome removal/replacement (such as for _Terralith_ or _Alpine_)
-- Noise/density function scale adjustment (such as for _Continents_)
-- A format to allow datapacks to define their own config screens
+- Nuitka
 
 and now... mhmm.. i wan spaghetti now...
 
