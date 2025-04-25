@@ -80,7 +80,7 @@ class BrowserWidget(QtWidgets.QWidget):
 		self.textBox.setText("Log hasn't loaded yet.")
 		self.layout.addWidget(self.textBox)
 
-		self.someLabel = QtWidgets.QLabel("Logging functionality is work in progress!<br>Logs from previous sessions aren't currently kept. Sorry 🥺")
+		self.someLabel = QtWidgets.QLabel("Logging functionality is work in progress!<br>Logs from previous sessions aren't currently kept. Sorry 🥺<br>Pro tip: Launch the app from a terminal to get full app debug info.")
 		self.layout.addWidget(self.someLabel)
 
 		self.buttonLayout = QtWidgets.QHBoxLayout()

@@ -8,7 +8,7 @@ class DataHandler:
 	_instance = None
 
 	def __new__(cls, *args, **kwargs):
-		print("Data handler accessed... (This call should be seen as infrequently as possible!)")
+		print("Data handler accessed...")
 		if not cls._instance:
 			cls._instance = super().__new__(cls)
 		return cls._instance
