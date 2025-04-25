@@ -45,7 +45,7 @@ class ConfigManager:
 			return None
 
 		else:
-			self.log.printInfo(f"[CONFIG] Writing changes made using dpconfig to '{datapack.name}'...")
+			self.log.printInfo(f"[CONFIG] Writing changes made using config to '{datapack.name}'...")
 
 			# Load working objects
 			config = self.handlers[datapack.name]
