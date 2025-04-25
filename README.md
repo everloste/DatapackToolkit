@@ -44,13 +44,27 @@ Make sure the `assets` folder is included alongside the exported executable.
 
 ### Compiling using Nuitka
 
-You can also compile Datapack Toolkit using Nuitka. This is preferred over PyInstaller as the performance of a compiled app is somewhat better.
+You can also compile Datapack Toolkit using Nuitka. This is preferred over PyInstaller as the performance and size of the compiled app is somewhat better.
+
+This is what is used since version 0.25.4.25.
+
+cd to the project directory. Then run the command.
 
 Command for Windows:
 
 ```
 python -m nuitka --standalone --enable-plugin=pyside6 --output-filename=dptoolkit --include-data-dir=assets=assets --windows-console-mode=attach --windows-icon-from-ico=assets/icon.ico src/__main__.py
 ```
+
+You can also compile for Linux on Windows using WSL.
+
+Command for Linux:
+
+```
+python3 -m nuitka --standalone --enable-plugin=pyside6 --output-filename=dptoolkit --include-data-dir=assets=assets src/__main__.py
+```
+
+Make sure the `assets` folder is included alongside the compiled executable.
 
 ## Plans for Datapack Toolkit
 
