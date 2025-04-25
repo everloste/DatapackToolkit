@@ -1,6 +1,6 @@
 class META:
 	app_name: str = "Datapack Toolkit"
-	app_version: str = "0.25.4.23"
+	app_version: str = "0.25.4.25"
 	default_theme: str = "fusion"
 	root: str = "./"
 	log_verbosity_level: int = 3
