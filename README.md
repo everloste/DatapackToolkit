@@ -12,7 +12,7 @@ The result are modified datapacks ready to be used.
 ## Using Datapack Toolkit
 No installation is necessary. Simply download the latest version, extract, and run the app! (Run the executable named `dptoolkit`)
 
-Load your datapack(s), make your changes, and then export them.
+Load your datapack(s), make your changes, and export. **You can also load mods!**
 
 They should then be put in the same order in-game as they were in Datapack Toolkit if you want the same results!
 Datapack Toolkit takes their order into consideration.
