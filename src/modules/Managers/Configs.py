@@ -300,6 +300,12 @@ class ConfigMethod:
 				elif argument["function"] == "multiply":
 					return self.readTransformerArgument(argument["argument"]) * self.readTransformerArgument(argument["argument1"])
 
+				elif argument["function"] == "divide":
+					return self.readTransformerArgument(argument["argument"]) / self.readTransformerArgument(argument["argument1"])
+
+				elif argument["function"] == "modulo":
+					return self.readTransformerArgument(argument["argument"]) % self.readTransformerArgument(argument["argument1"])
+
 				elif argument["function"] == "square":
 					return pow(self.readTransformerArgument(argument["argument"]), 2)
 
