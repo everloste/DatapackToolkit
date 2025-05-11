@@ -312,8 +312,11 @@ class ConfigMethod:
 				elif argument["function"] == "square_root":
 					return math.sqrt(self.readTransformerArgument(argument["argument"]))
 
-				if argument["function"] == "add":
+				elif argument["function"] == "add":
 					return self.readTransformerArgument(argument["argument"]) + self.readTransformerArgument(argument["argument1"])
+
+				else:
+					return None
 
 		else:
 			return None

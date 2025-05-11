@@ -7,6 +7,9 @@ from dataclasses import dataclass, field
 from src.enums import WidgetUpdateReason
 import src.modules.Log as Log
 
+# This is for optimising things
+import time
+
 
 class DatapackManager:
 	datapacks: dict = dict()
@@ -189,6 +192,8 @@ class DatapackManager:
 
 	def export_packs(self, export_dir: str, compress: bool = True, level: int = 5) -> bool:
 
+		timer: float = time.perf_counter()
+
 		# Create temporary directory to work in
 		temp_dir = f"{META.root}/temp"
 		if not os.path.exists(temp_dir):
@@ -210,8 +215,12 @@ class DatapackManager:
 			datapack = self.Datapack(archive=archive, path=temp_path)
 
 			# Now we may edit it
+			timer1: float = time.perf_counter()
 			for child_manager in self.children_managers:
 				child_manager.apply_changes_to_pack(datapack)
+
+			timer1 = time.perf_counter() - timer1
+			print(f"[EXPORT] Called managers to apply changes to {datapack.name}. This took {round(timer1 * 1000)} ms. See log for detailed info")
 
 			datapack.apply(compress=compress, level=level)
 
@@ -227,6 +236,9 @@ class DatapackManager:
 
 		# Delete temporary directory
 		shutil.rmtree(temp_dir)
+
+		timer = time.perf_counter() - timer
+		print(f"[EXPORT] Exported datapacks to filesystem. The whole process took a total of {round(timer * 1000)} ms")
 
 		return True
 
@@ -257,6 +269,8 @@ class DatapackManager:
 			log = Log.Writer()
 			log.printInfo(f"Final write for '{self.name}':\n\tDisabling files: {self.files_to_disable}\n\tEnabling files: {self.files_to_enable}\n\tRewriting files: {self.files_to_rewrite.keys()}")
 
+			timer: float = time.perf_counter()
+
 			compression = ZIP_DEFLATED if compress == True else ZIP_STORED
 			with (zipfile.ZipFile(temp_path, "w", compression=compression, compresslevel=level) as final):
 
@@ -280,3 +294,6 @@ class DatapackManager:
 							data = self.files_to_rewrite[rule]
 
 					final.writestr(new_name, data)
+
+			timer = time.perf_counter() - timer
+			print(f"[EXPORT] Written files to archive for {self.name}. This took {round(timer * 1000)} ms. See log for detailed info")
