@@ -1,5 +1,7 @@
 ![Datapack Toolkit logo](https://raw.githubusercontent.com/everloste/DatapackToolkit/refs/heads/main/assets/title-export.png)
 
+## Datapack Toolkit Python has been discontinued. Its successor can be found [here](https://github.com/everloste/dptoolkit-web).
+
 An easy-to-use Minecraft worldgen datapack configuration tool created in a weekend.
 
 Currently supports:
